@@ -336,3 +336,123 @@ void setupSDCard()
     LOG_DEBUG("Used space: %lu MB", (uint32_t)(SD.usedBytes() / (1024 * 1024)));
 #endif
 }
+
+void listSDFiles(const char * dirname, uint8_t levels)
+{
+#if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
+    concurrency::LockGuard g(spiLock);
+    LOG_DEBUG("Listing directory: %s\n", dirname);
+
+    File root = SD.open(dirname);
+    if(!root){
+        LOG_DEBUG("Failed to open directory");
+        return;
+    }
+    if(!root.isDirectory()){
+        LOG_DEBUG("Not a directory");
+        return;
+    }
+
+    File file = root.openNextFile();
+    while(file){
+    if(file.isDirectory()){
+        LOG_DEBUG("  DIR : %s", file.name());
+        if(levels)
+            listDir(file.name(), levels - 1);
+    } else {
+        LOG_DEBUG("  FILE: %s  SIZE: %lu", file.name(), file.size());
+    }
+        file = root.openNextFile();
+    }
+#endif
+}
+
+void writeFile(const char * path, const char * message)
+{
+#if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
+    concurrency::LockGuard g(spiLock);
+    LOG_DEBUG("Writing file: %s\n", path);
+
+    File file = SD.open(path, FILE_WRITE);
+    if (!file) {
+        LOG_DEBUG("Failed to open file for writing");
+        return;
+    }
+
+    if (file.print(message))
+        LOG_DEBUG("File written");
+    else
+       LOG_DEBUG("Write failed");
+
+    file.close();
+#endif
+}
+
+void createSDDir(const char * path)
+{
+#if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
+    concurrency::LockGuard g(spiLock);
+
+    if (SD.exists(path)) {
+        LOG_DEBUG("Path: <%s> already exists, do nothing\n", path);
+        return;
+    }
+
+    LOG_DEBUG("Creating Dir: %s\n", path);
+    if (SD.mkdir(path))
+        LOG_DEBUG("Dir created");
+    else
+        LOG_DEBUG("mkdir failed");
+#endif
+}
+
+void appendSDFile(const char * path, const char * message)
+{
+#if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
+    concurrency::LockGuard g(spiLock);
+    LOG_DEBUG("Appending to file: %s\n", path);
+
+    File file = SD.open(path, FILE_APPEND);
+    if (!file){
+        LOG_DEBUG("Failed to open file for appending");
+        return;
+    }
+
+    if (file.print(message))
+        LOG_DEBUG("Message appended");
+    else
+        LOG_DEBUG("Append failed");
+
+    file.close();
+#endif
+}
+
+void readSDFile(const char * path, std::vector<uint8_t> &fileData)
+{
+#if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
+    concurrency::LockGuard g(spiLock);
+    LOG_DEBUG("Reading file: %s\n", path);
+
+    File file = SD.open(path);
+    if(!file) {
+        LOG_DEBUG("Failed to open file for reading");
+        return;
+    }
+
+    fileData.clear();
+    fileData.reserve(file.size());
+
+    LOG_DEBUG("Read from file: ");
+
+    std::array<uint8_t, std::numeric_limits<uint16_t>::max()> readBuffer;
+    const uint16_t blockSize = readBuffer.size();
+    while(file.available()) {
+        const int realBlockSize = file.read(readBuffer.data(), blockSize);
+        std::copy(readBuffer.cbegin(), readBuffer.cbegin() + realBlockSize, std::back_inserter(fileData));
+        LOG_DEBUG("read new %d bytes from the file", realBlockSize);
+    }
+
+    fileData.shrink_to_fit();
+    file.close();
+#endif
+}
