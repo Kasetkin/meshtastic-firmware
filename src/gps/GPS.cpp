@@ -14,6 +14,7 @@
 #include "buzz.h"
 #include "concurrency/Periodic.h"
 #include "meshUtils.h"
+#include "FSCommon.h"
 
 #include "main.h" // pmu_found
 #include "sleep.h"
@@ -1070,6 +1071,30 @@ void GPS::publishUpdate()
         newStatus.notifyObservers(&status);
         if (config.position.gps_mode == meshtastic_Config_PositionConfig_GpsMode_ENABLED) {
             positionModule->handleNewPosition();
+        }
+
+        if (p.timestamp > 0) {
+            const std::string path = std::string("/logs");
+            createSDDir(path.c_str());
+
+            const uint32_t secondsPerDay = 60 * 60 * 24;
+            const uint32_t onlyDays = p.timestamp / secondsPerDay;
+            const std::string filename = std::to_string(onlyDays) + ".csv";
+
+            const double lat = static_cast<double>(p.latitude_i) * 1e-7;
+            const double lon = static_cast<double>(p.longitude_i) * 1e-7;
+            // DMS coordsAsDms;
+            // GeoCoord::latLongToDMS(lat, lon, coordsAsDms);
+            const std::string message =
+                std::string("TIME;") + std::to_string(p.timestamp)
+                + std::string(";LAT;") + std::to_string(lat)
+                + std::string(";LON;") + std::to_string(lon)
+                + std::string(";ALT;") + std::to_string(p.altitude)
+                + std::string(";SATS;") + std::to_string(p.sats_in_view)
+                + std::string("\n");
+
+            const std::string fullpath = path + "/" + filename;
+            appendSDFile(fullpath.c_str(), message.c_str());
         }
     }
 }
