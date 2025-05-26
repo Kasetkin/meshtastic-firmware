@@ -29,7 +29,7 @@
   "forwardPorts": [4403],
 
   // Use "--device=" to make a local device available inside the container.
-  // "runArgs": ["--device=/dev/ttyACM0"],
+  "runArgs": ["--device=/dev/ttyACM0"],
 
   // Run commands to prepare the container for use
   "postCreateCommand": ".devcontainer/setup.sh"
