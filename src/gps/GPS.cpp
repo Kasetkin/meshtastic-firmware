@@ -1077,22 +1077,53 @@ void GPS::publishUpdate()
             const std::string path = std::string("/logs");
             createSDDir(path.c_str());
 
-            const uint32_t secondsPerDay = 60 * 60 * 24;
-            const uint32_t onlyDays = p.timestamp / secondsPerDay;
-            const std::string filename = std::to_string(onlyDays) + ".csv";
+            struct tm  gmTime{};
+            const time_t stampT = static_cast<time_t>(p.timestamp);
+            gmTime = *gmtime(&stampT);
+            gmTime.tm_year += 1900;
+
+            const std::string dateString =
+                  std::to_string(gmTime.tm_year) + "-"
+                + std::to_string(gmTime.tm_mon) + "-"
+                + std::to_string(gmTime.tm_mday);
+
+            const std::string timeString =
+                  std::to_string(gmTime.tm_hour) + ":"
+                + std::to_string(gmTime.tm_min) + ":"
+                + std::to_string(gmTime.tm_sec);
+
+            const std::string millis = p.timestamp_millis_adjust > 0
+                ? std::to_string(p.timestamp_millis_adjust)
+                : std::string();
+
+            const int leadingZerosCount = std::max<int>(0, 3 - static_cast<int>(millis.size()));
+            const std::string millisWithZeros = std::string(leadingZerosCount, '0') + millis;
+
+            const std::string dateTimeStringFull = p.timestamp_millis_adjust > 0
+                ? dateString + 'T' + timeString + '.' + millisWithZeros + 'Z'
+                : dateString + 'T' + timeString + 'Z';
+
+            LOG_DEBUG("date from GPS: %d-%d-%dT%d:%d:%d.%dZ",
+                gmTime.tm_year, gmTime.tm_mon, gmTime.tm_mday,
+                gmTime.tm_hour, gmTime.tm_min, gmTime.tm_sec,
+                p.timestamp_millis_adjust
+            );
+
+            LOG_DEBUG("date formatted by code: %s", dateTimeStringFull.c_str());
 
             const double lat = static_cast<double>(p.latitude_i) * 1e-7;
             const double lon = static_cast<double>(p.longitude_i) * 1e-7;
             // DMS coordsAsDms;
             // GeoCoord::latLongToDMS(lat, lon, coordsAsDms);
             const std::string message =
-                std::string("TIME;") + std::to_string(p.timestamp)
+                std::string("DT;") + dateTimeStringFull
                 + std::string(";LAT;") + std::to_string(lat)
                 + std::string(";LON;") + std::to_string(lon)
                 + std::string(";ALT;") + std::to_string(p.altitude)
                 + std::string(";SATS;") + std::to_string(p.sats_in_view)
                 + std::string("\n");
 
+            const std::string filename = dateString + ".csv";
             const std::string fullpath = path + "/" + filename;
             appendSDFile(fullpath.c_str(), message.c_str());
         }
