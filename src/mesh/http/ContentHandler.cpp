@@ -98,7 +98,7 @@ void registerHandlers(HTTPServer *insecureServer, HTTPSServer *secureServer)
     ResourceNode *nodeJsonFsBrowseStatic = new ResourceNode("/json/fs/browse/static", "GET", &handleFsBrowseStatic);
     ResourceNode *nodeJsonDelete = new ResourceNode("/json/fs/delete/static", "DELETE", &handleFsDeleteStatic);
 
-    ResourceNode *nodeSD = new ResourceNode("/sd/*", "GET", &handleSD);
+    ResourceNode *nodeSDLogs = new ResourceNode("/sd/logs/*", "GET", &handleSDLogs);
     ResourceNode *nodeRoot = new ResourceNode("/*", "GET", &handleStatic);
 
     // Secure nodes
@@ -122,7 +122,7 @@ void registerHandlers(HTTPServer *insecureServer, HTTPSServer *secureServer)
     //    secureServer->registerNode(nodeAdminFs);
     //    secureServer->registerNode(nodeAdminSettings);
     //    secureServer->registerNode(nodeAdminSettingsApply);
-    secureServer->registerNode(nodeSD);
+    secureServer->registerNode(nodeSDLogs);
     secureServer->registerNode(nodeRoot); // This has to be last
 
     // Insecure nodes
@@ -145,7 +145,7 @@ void registerHandlers(HTTPServer *insecureServer, HTTPSServer *secureServer)
     //    insecureServer->registerNode(nodeAdminFs);
     //    insecureServer->registerNode(nodeAdminSettings);
     //    insecureServer->registerNode(nodeAdminSettingsApply);
-    insecureServer->registerNode(nodeSD);
+    insecureServer->registerNode(nodeSDLogs);
     insecureServer->registerNode(nodeRoot); // This has to be last
 }
 
@@ -470,8 +470,9 @@ void handleStatic(HTTPRequest *req, HTTPResponse *res)
     }
 }
 
-void handleSD(HTTPRequest *req, HTTPResponse *res)
+void handleSDLogs(HTTPRequest *req, HTTPResponse *res)
 {
+    LOG_DEBUG("handle SD HTTPRequest");
     // Get access to the parameters
     ResourceParameters *params = req->getParams();
 
@@ -479,18 +480,21 @@ void handleSD(HTTPRequest *req, HTTPResponse *res)
     // Print the first parameter value
     if (params->getPathParameter(0, parameter1)) {
 
-        std::string fileName = "/" + parameter1;
+        std::string fileName = "/logs/" + parameter1;
+        LOG_DEBUG("filename is: %s", fileName.c_str());
 
         std::vector<uint8_t> fileData;
         readSDFile(fileName.c_str(), fileData);
-        if (fileData.size() == 0)
-            LOG_WARN("File not available - %s", filename.c_str());
+        if (fileData.size() == 0) {
+            LOG_WARN("File not available - %s", fileName.c_str());
+        } else {
 
-        res->setHeader("Content-Length", httpsserver::intToString(fileData.size()));
-        res->setHeader("Content-Type", "application/octet-stream");
+            res->setHeader("Content-Length", httpsserver::intToString(fileData.size()));
+            res->setHeader("Content-Type", "application/octet-stream");
 
-        // write file to the HTTP response body
-        res->write(fileData.data(), fileData.size());
+            // write file to the HTTP response body
+            res->write(fileData.data(), fileData.size());
+        }
 
         return;
     } else {
