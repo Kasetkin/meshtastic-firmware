@@ -373,6 +373,17 @@ void writeFile(const char * path, const char * message)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Writing file: %s\n", path);
 
+    const auto cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+        LOG_DEBUG("Try To init SD card");
+        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
+            LOG_DEBUG("SD card init: failed");
+            return;
+        } else {
+            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
+        }
+    }
+
     File file = SD.open(path, FILE_WRITE);
     if (!file) {
         LOG_DEBUG("Failed to open file for writing");
@@ -393,6 +404,17 @@ void createSDDir(const char * path)
 #if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
     concurrency::LockGuard g(spiLock);
 
+    const auto cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+        LOG_DEBUG("Try To init SD card");
+        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
+            LOG_DEBUG("SD card init: failed");
+            return;
+        } else {
+            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
+        }
+    }
+
     if (SD.exists(path)) {
         LOG_DEBUG("Path: <%s> already exists, do nothing\n", path);
         return;
@@ -411,6 +433,17 @@ void appendSDFile(const char * path, const char * message)
 #if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Appending to file: %s\n", path);
+
+    const auto cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+        LOG_DEBUG("Try To init SD card");
+        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
+            LOG_DEBUG("SD card init: failed");
+            return;
+        } else {
+            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
+        }
+    }
 
     File file = SD.open(path, FILE_APPEND);
     if (!file){
@@ -432,6 +465,17 @@ void readSDFile(const char * path, std::vector<uint8_t> &fileData)
 #if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Reading file: %s\n", path);
+
+    const auto cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+        LOG_DEBUG("Try To init SD card");
+        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
+            LOG_DEBUG("SD card init: failed");
+            return;
+        } else {
+            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
+        }
+    }
 
     File file = SD.open(path);
     if(!file) {
