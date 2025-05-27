@@ -1,5 +1,8 @@
 // #define BUTTON_NEED_PULLUP // if set we need to turn on the internal CPU pullup during sleep
 
+/// LOCAL MODIFICATIONS!!!
+#define DEBUG_MUTE
+
 #define I2C_SDA1 42 // Used for PMU management and PCF8563
 #define I2C_SCL1 41 // Used for PMU management and PCF8563
 
