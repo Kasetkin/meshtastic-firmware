@@ -401,10 +401,10 @@ void listSDFiles(const char * dirname, uint8_t levels)
 
     File file = root.openNextFile();
     while(file){
-    if(file.isDirectory()){
-        LOG_DEBUG("  DIR : %s", file.name());
-        if(levels)
-            listDir(file.name(), levels - 1);
+        if (file.isDirectory()) {
+            LOG_DEBUG("  DIR : %s", file.name());
+            if(levels)
+                listDir(file.name(), levels - 1);
     } else {
         LOG_DEBUG("  FILE: %s  SIZE: %lu", file.name(), file.size());
     }
