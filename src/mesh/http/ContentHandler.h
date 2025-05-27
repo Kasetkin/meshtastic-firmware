@@ -6,6 +6,7 @@ void handleAPIv1FromRadio(HTTPRequest *req, HTTPResponse *res);
 void handleAPIv1ToRadio(HTTPRequest *req, HTTPResponse *res);
 void handleHotspot(HTTPRequest *req, HTTPResponse *res);
 void handleStatic(HTTPRequest *req, HTTPResponse *res);
+void handleSD(HTTPRequest *req, HTTPResponse *res);
 void handleRestart(HTTPRequest *req, HTTPResponse *res);
 void handleFormUpload(HTTPRequest *req, HTTPResponse *res);
 void handleScanNetworks(HTTPRequest *req, HTTPResponse *res);
