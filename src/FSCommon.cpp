@@ -337,11 +337,57 @@ void setupSDCard()
 #endif
 }
 
+/**
+ * Only for internal use, so don't create LockGuard g(spiLock)
+ */
+bool testSDCard()
+{
+    const auto ROOT_DIRECTORY = "/";
+    File root = SD.open(ROOT_DIRECTORY);
+    if (root)
+        return true;
+    else
+        return false;
+}
+
+/**
+ * Only for internal use, so don't create LockGuard g(spiLock)
+ */
+bool testAndInitSDCard()
+{
+    const auto cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+        LOG_DEBUG("Try To init SD card");
+        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
+            LOG_DEBUG("SD card init: failed");
+            return false;
+        } else {
+            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
+            return testSDCard();
+        }
+    } else {
+        const bool cardIsReady = testSDCard();
+        if (!cardIsReady) {
+            LOG_DEBUG("SD card is not working anymore, stop filesystem");
+            SD.end();
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void listSDFiles(const char * dirname, uint8_t levels)
 {
 #if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Listing directory: %s\n", dirname);
+
+    const bool cardIsReady = testAndInitSDCard();
+    if (!cardIsReady)
+        return;
 
     File root = SD.open(dirname);
     if(!root){
@@ -373,16 +419,9 @@ void writeFile(const char * path, const char * message)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Writing file: %s\n", path);
 
-    const auto cardType = SD.cardType();
-    if (cardType == CARD_NONE) {
-        LOG_DEBUG("Try To init SD card");
-        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
-            LOG_DEBUG("SD card init: failed");
-            return;
-        } else {
-            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
-        }
-    }
+    const bool cardIsReady = testAndInitSDCard();
+    if (!cardIsReady)
+        return;
 
     File file = SD.open(path, FILE_WRITE);
     if (!file) {
@@ -404,16 +443,9 @@ void createSDDir(const char * path)
 #if defined(HAS_SDCARD) && !defined(SDCARD_USE_SOFT_SPI)
     concurrency::LockGuard g(spiLock);
 
-    const auto cardType = SD.cardType();
-    if (cardType == CARD_NONE) {
-        LOG_DEBUG("Try To init SD card");
-        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
-            LOG_DEBUG("SD card init: failed");
-            return;
-        } else {
-            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
-        }
-    }
+    const bool cardIsReady = testAndInitSDCard();
+    if (!cardIsReady)
+        return;
 
     if (SD.exists(path)) {
         LOG_DEBUG("Path: <%s> already exists, do nothing\n", path);
@@ -434,16 +466,9 @@ void appendSDFile(const char * path, const char * message)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Appending to file: %s\n", path);
 
-    const auto cardType = SD.cardType();
-    if (cardType == CARD_NONE) {
-        LOG_DEBUG("Try To init SD card");
-        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
-            LOG_DEBUG("SD card init: failed");
-            return;
-        } else {
-            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
-        }
-    }
+    const bool cardIsReady = testAndInitSDCard();
+    if (!cardIsReady)
+        return;
 
     File file = SD.open(path, FILE_APPEND);
     if (!file){
@@ -466,16 +491,9 @@ void readSDFile(const char * path, std::vector<uint8_t> &fileData)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Reading file: %s\n", path);
 
-    const auto cardType = SD.cardType();
-    if (cardType == CARD_NONE) {
-        LOG_DEBUG("Try To init SD card");
-        if (!SD.begin(SDCARD_CS, SDHandler, SD_SPI_FREQUENCY)) {
-            LOG_DEBUG("SD card init: failed");
-            return;
-        } else {
-            LOG_DEBUG("SD card init: success, card type: %d", SD.cardType());
-        }
-    }
+    const bool cardIsReady = testAndInitSDCard();
+    if (!cardIsReady)
+        return;
 
     File file = SD.open(path);
     if(!file) {
