@@ -1089,7 +1089,11 @@ void GPS::publishUpdate()
             struct tm  gmTime{};
             const time_t stampT = static_cast<time_t>(p.timestamp);
             gmTime = *gmtime(&stampT);
-            gmTime.tm_year += 1900;
+
+            constexpr int GMTIME_YEAR_FIX = 1900;
+            constexpr int GMTIME_MONTH_FIX = 1;
+            gmTime.tm_year += GMTIME_YEAR_FIX;
+            gmTime.tm_mon += GMTIME_MONTH_FIX;
 
             const std::string yearStr = std::to_string(gmTime.tm_year);
             const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
@@ -1115,11 +1119,15 @@ void GPS::publishUpdate()
             LOG_DEBUG("date formatted by code: %s", dateTimeStringFull.c_str());
 
             const auto &ownerId = devicestate.owner.id;
+            const auto &ownerShortName = devicestate.owner.short_name;
+            const auto &ownerFullName = devicestate.owner.long_name;
 
             const double lat = static_cast<double>(p.latitude_i) * 1e-7;
             const double lon = static_cast<double>(p.longitude_i) * 1e-7;
             const std::string message =
                   std::string("ID;") + std::string(ownerId)
+                + std::string(";NAME;") + std::string(ownerShortName)
+                + std::string(";FULLNAME;") + std::string(ownerFullName)
                 + std::string(";DT;") + dateTimeStringFull
                 + std::string(";LAT;") + std::to_string(lat)
                 + std::string(";LON;") + std::to_string(lon)
