@@ -491,6 +491,8 @@ void readSDFile(const char * path, std::vector<uint8_t> &fileData)
     concurrency::LockGuard g(spiLock);
     LOG_DEBUG("Reading file: %s\n", path);
 
+    fileData.clear();
+
     const bool cardIsReady = testAndInitSDCard();
     if (!cardIsReady)
         return;
@@ -501,12 +503,12 @@ void readSDFile(const char * path, std::vector<uint8_t> &fileData)
         return;
     }
 
-    fileData.clear();
     fileData.reserve(file.size());
 
     LOG_DEBUG("Read from file: ");
 
-    std::array<uint8_t, std::numeric_limits<uint16_t>::max()> readBuffer;
+    constexpr size_t MAX_BUFFER_SIZE = 256;
+    std::array<uint8_t, MAX_BUFFER_SIZE> readBuffer;
     const uint16_t blockSize = readBuffer.size();
     while(file.available()) {
         const int realBlockSize = file.read(readBuffer.data(), blockSize);
