@@ -1058,6 +1058,15 @@ void GPS::down()
     }
 }
 
+inline std::string toStringWithZeros(const int value, const size_t numberOfDigits)
+{
+    const std::string basicString = std::to_string(value);
+    if (numberOfDigits > basicString.size())
+        return std::string(numberOfDigits - basicString.size(), '0') + basicString;
+    else
+        return basicString;
+}
+
 void GPS::publishUpdate()
 {
     if (shouldPublish) {
@@ -1082,26 +1091,20 @@ void GPS::publishUpdate()
             gmTime = *gmtime(&stampT);
             gmTime.tm_year += 1900;
 
-            const std::string dateString =
-                  std::to_string(gmTime.tm_year) + "-"
-                + std::to_string(gmTime.tm_mon) + "-"
-                + std::to_string(gmTime.tm_mday);
+            const std::string yearStr = std::to_string(gmTime.tm_year);
+            const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
+            const std::string dayStr = toStringWithZeros(gmTime.tm_mday, 2);
+            const std::string dateString = yearStr + "-" + monthStr + "-" + dayStr;
 
-            const std::string timeString =
-                  std::to_string(gmTime.tm_hour) + ":"
-                + std::to_string(gmTime.tm_min) + ":"
-                + std::to_string(gmTime.tm_sec);
-
-            const std::string millis = p.timestamp_millis_adjust > 0
-                ? std::to_string(p.timestamp_millis_adjust)
+            const std::string hoursStr = toStringWithZeros(gmTime.tm_hour, 2);
+            const std::string minutesStr = toStringWithZeros(gmTime.tm_min, 2);
+            const std::string secondsStr = toStringWithZeros(gmTime.tm_sec, 2);
+            const std::string millisWithZeros = p.timestamp_millis_adjust > 0
+                ? '.' + toStringWithZeros(p.timestamp_millis_adjust, 3)
                 : std::string();
 
-            const int leadingZerosCount = std::max<int>(0, 3 - static_cast<int>(millis.size()));
-            const std::string millisWithZeros = std::string(leadingZerosCount, '0') + millis;
-
-            const std::string dateTimeStringFull = p.timestamp_millis_adjust > 0
-                ? dateString + 'T' + timeString + '.' + millisWithZeros + 'Z'
-                : dateString + 'T' + timeString + 'Z';
+            const std::string timeString = hoursStr + ":" + minutesStr + ":" + secondsStr + millisWithZeros;
+            const std::string dateTimeStringFull = dateString + 'T' + timeString + 'Z';
 
             LOG_DEBUG("date from GPS: %d-%d-%dT%d:%d:%d.%dZ",
                 gmTime.tm_year, gmTime.tm_mon, gmTime.tm_mday,
@@ -1111,12 +1114,13 @@ void GPS::publishUpdate()
 
             LOG_DEBUG("date formatted by code: %s", dateTimeStringFull.c_str());
 
+            const auto &ownerId = devicestate.owner.id;
+
             const double lat = static_cast<double>(p.latitude_i) * 1e-7;
             const double lon = static_cast<double>(p.longitude_i) * 1e-7;
-            // DMS coordsAsDms;
-            // GeoCoord::latLongToDMS(lat, lon, coordsAsDms);
             const std::string message =
-                std::string("DT;") + dateTimeStringFull
+                  std::string("ID;") + std::string(ownerId)
+                + std::string(";DT;") + dateTimeStringFull
                 + std::string(";LAT;") + std::to_string(lat)
                 + std::string(";LON;") + std::to_string(lon)
                 + std::string(";ALT;") + std::to_string(p.altitude)
