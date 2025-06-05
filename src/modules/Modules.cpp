@@ -92,6 +92,9 @@
 #include "modules/SerialModule.h"
 #endif
 #endif
+#if defined(HAS_SDCARD)
+#include "modules/SdLoggerModule.h"
+#endif
 
 #if !MESHTASTIC_EXCLUDE_DROPZONE
 #include "modules/DropzoneModule.h"
@@ -245,6 +248,9 @@ void setupModules()
 #if !MESHTASTIC_EXCLUDE_RANGETEST && !MESHTASTIC_EXCLUDE_GPS
         new RangeTestModule();
 #endif
+#endif
+#if defined(HAS_SDCARD)
+        new SdLoggerModule();
 #endif
     } else {
 #if !MESHTASTIC_EXCLUDE_ADMIN

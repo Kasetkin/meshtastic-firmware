@@ -1058,15 +1058,6 @@ void GPS::down()
     }
 }
 
-inline std::string toStringWithZeros(const int value, const size_t numberOfDigits)
-{
-    const std::string basicString = std::to_string(value);
-    if (numberOfDigits > basicString.size())
-        return std::string(numberOfDigits - basicString.size(), '0') + basicString;
-    else
-        return basicString;
-}
-
 void GPS::publishUpdate()
 {
     if (shouldPublish) {
@@ -1080,64 +1071,6 @@ void GPS::publishUpdate()
         newStatus.notifyObservers(&status);
         if (config.position.gps_mode == meshtastic_Config_PositionConfig_GpsMode_ENABLED) {
             positionModule->handleNewPosition();
-        }
-
-        if (p.timestamp > 0) {
-            const std::string path = std::string("/logs");
-            createSDDir(path.c_str());
-
-            struct tm  gmTime{};
-            const time_t stampT = static_cast<time_t>(p.timestamp);
-            gmTime = *gmtime(&stampT);
-
-            constexpr int GMTIME_YEAR_FIX = 1900;
-            constexpr int GMTIME_MONTH_FIX = 1;
-            gmTime.tm_year += GMTIME_YEAR_FIX;
-            gmTime.tm_mon += GMTIME_MONTH_FIX;
-
-            const std::string yearStr = std::to_string(gmTime.tm_year);
-            const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
-            const std::string dayStr = toStringWithZeros(gmTime.tm_mday, 2);
-            const std::string dateString = yearStr + "-" + monthStr + "-" + dayStr;
-
-            const std::string hoursStr = toStringWithZeros(gmTime.tm_hour, 2);
-            const std::string minutesStr = toStringWithZeros(gmTime.tm_min, 2);
-            const std::string secondsStr = toStringWithZeros(gmTime.tm_sec, 2);
-            const std::string millisWithZeros = p.timestamp_millis_adjust > 0
-                ? '.' + toStringWithZeros(p.timestamp_millis_adjust, 3)
-                : std::string();
-
-            const std::string timeString = hoursStr + ":" + minutesStr + ":" + secondsStr + millisWithZeros;
-            const std::string dateTimeStringFull = dateString + 'T' + timeString + 'Z';
-
-            LOG_DEBUG("date from GPS: %d-%d-%dT%d:%d:%d.%dZ",
-                gmTime.tm_year, gmTime.tm_mon, gmTime.tm_mday,
-                gmTime.tm_hour, gmTime.tm_min, gmTime.tm_sec,
-                p.timestamp_millis_adjust
-            );
-
-            LOG_DEBUG("date formatted by code: %s", dateTimeStringFull.c_str());
-
-            const auto &ownerId = devicestate.owner.id;
-            const auto &ownerShortName = devicestate.owner.short_name;
-            const auto &ownerFullName = devicestate.owner.long_name;
-
-            const double lat = static_cast<double>(p.latitude_i) * 1e-7;
-            const double lon = static_cast<double>(p.longitude_i) * 1e-7;
-            const std::string message =
-                  std::string("ID;") + std::string(ownerId)
-                + std::string(";NAME;") + std::string(ownerShortName)
-                + std::string(";FULLNAME;") + std::string(ownerFullName)
-                + std::string(";DT;") + dateTimeStringFull
-                + std::string(";LAT;") + std::to_string(lat)
-                + std::string(";LON;") + std::to_string(lon)
-                + std::string(";ALT;") + std::to_string(p.altitude)
-                + std::string(";SATS;") + std::to_string(p.sats_in_view)
-                + std::string("\n");
-
-            const std::string filename = dateString + ".csv";
-            const std::string fullpath = path + "/" + filename;
-            appendSDFile(fullpath.c_str(), message.c_str());
         }
     }
 }

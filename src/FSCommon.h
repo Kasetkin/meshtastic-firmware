@@ -57,9 +57,12 @@ void listDir(const char *dirname, uint8_t levels, bool del = false);
 void rmDir(const char *dirname);
 void setupSDCard();
 
+/**
+ * Only for internal use, so don't create LockGuard g(spiLock)
+ */
+bool testSDCard();
 
-void listSDFiles(const char * dirname, uint8_t levels);
-void writeFile(const char * path, const char * message);
-void createSDDir(const char * path);
-void appendSDFile(const char * path, const char * message);
-void readSDFile(const char * path, std::vector<uint8_t> &fileData);
+/**
+ * Only for internal use, so don't create LockGuard g(spiLock)
+ */
+bool testAndInitSDCard();

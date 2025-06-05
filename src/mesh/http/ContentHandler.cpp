@@ -6,6 +6,7 @@
 #include "main.h"
 #include "mesh/http/ContentHelper.h"
 #include "mesh/http/WebServer.h"
+#include "modules/SdLoggerModule.h"
 #if HAS_WIFI
 #include "mesh/wifi/WiFiAPClient.h"
 #endif
@@ -484,7 +485,7 @@ void handleSDLogs(HTTPRequest *req, HTTPResponse *res)
         LOG_DEBUG("filename is: %s", fileName.c_str());
 
         std::vector<uint8_t> fileData;
-        readSDFile(fileName.c_str(), fileData);
+        SdLoggerModule::readSDFile(fileName.c_str(), fileData);
         if (fileData.size() == 0) {
             LOG_WARN("File not available - %s", fileName.c_str());
         } else {
