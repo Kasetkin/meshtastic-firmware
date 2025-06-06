@@ -25,15 +25,20 @@ class SdLoggerModule : public SinglePortModule, private concurrency::OSThread
     static const char * moduleThread;
     static const char * logsPath;
     static constexpr meshtastic_PortNum fakePortNumber = meshtastic_PortNum_UNKNOWN_APP;
-    static constexpr int64_t LOG_PERIOD_MS = 5000;
+    static const unsigned long LOG_PERIOD_MS = 1 * 1000;
 
-    int64_t lastLogTime = millis();
+    unsigned long lastLogTime = millis();
     std::string currentDate;
 
     void logCurrentState();
-    std::string generateGpsLog(std::string &dateString) const;
+    std::string generateFilename() const;
+    std::string generateGpsLog() const;
+    std::string generateTelemetryLog() const;
     std::string generateDeviceInfoLog() const;
+
     static std::string toStringWithZeros(const int value, const size_t numberOfDigits);
+    /// always 3 digits after '.'
+    static std::string toTelemetryRoundedString(const float value);
 };
 
 extern SdLoggerModule *sdLoggerModule;

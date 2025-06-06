@@ -1,6 +1,8 @@
 #include "SdLoggerModule.h"
+#include "Telemetry/EnvironmentTelemetry.h"
 #include "FSCommon.h"
 #include "SPILock.h"
+#include "RTC.h"
 #include "configuration.h"
 
 #include <SD.h>
@@ -19,11 +21,11 @@ SdLoggerModule::SdLoggerModule() : SinglePortModule(moduleName, fakePortNumber),
 
 int32_t SdLoggerModule::runOnce()
 {
-    const int64_t thisMoment = static_cast<int64_t>(millis());
+    const unsigned long thisMoment = millis();
     LOG_DEBUG("SdLoggerModule | runOnce, time is %d", thisMoment);
 
     if (thisMoment < lastLogTime + LOG_PERIOD_MS) {
-        const int64_t timeToSleep = LOG_PERIOD_MS + lastLogTime - thisMoment + 1;
+        const unsigned long timeToSleep = LOG_PERIOD_MS + lastLogTime - thisMoment + 1;
         LOG_DEBUG("too early, sleep for %d millisec", timeToSleep);
         return static_cast<int32_t>(timeToSleep);
     }
@@ -43,22 +45,81 @@ std::string SdLoggerModule::toStringWithZeros(const int value, const size_t numb
         return basicString;
 }
 
+std::string SdLoggerModule::toTelemetryRoundedString(const float value)
+{
+    std::string fullString = std::to_string(value);
+    const size_t dotPos = fullString.find('.');
+    if (dotPos == std::string::npos)
+        return fullString;
+
+    const size_t newLenght = std::min(dotPos + static_cast<size_t>(4), fullString.size());
+    fullString.resize(newLenght);
+    return fullString;
+}
+
 void SdLoggerModule::logCurrentState()
 {
     LOG_DEBUG("SdLoggerModule | message generation - start");
     createSDDir(logsPath);
 
+    const std::string filename = generateFilename() + ".csv";
     const std::string deviceLog = generateDeviceInfoLog();
-    const std::string gpsLog = generateGpsLog(currentDate);
+    const std::string gpsLog = generateGpsLog();
+    const std::string envTelemetry = generateTelemetryLog();
 
-    const std::string fullLogMessage = deviceLog + ";" + gpsLog + "\n";
+    const std::string fullLogMessage = deviceLog + gpsLog + envTelemetry + std::string("\n");
     LOG_DEBUG("SdLoggerModule | message generation - end");
-    LOG_DEBUG("SdLoggerModule | full message: %s", fullLogMessage.c_str());
+    LOG_DEBUG("SdLoggerModule | full message: \\");
+    LOG_DEBUG("%s \\",  deviceLog.c_str());
+    LOG_DEBUG("%s \\",  gpsLog.c_str());
+    LOG_DEBUG("%s \\",  envTelemetry.c_str());
+    LOG_DEBUG("END-OF-LINE");
 
-    const std::string filename = currentDate + ".csv";
     const std::string fullpath = std::string(logsPath) + "/" + filename;
     appendSDFile(fullpath.c_str(), fullLogMessage.c_str());
 
+}
+
+std::string SdLoggerModule::generateTelemetryLog() const
+{
+    LOG_DEBUG("SdLoggerModule | generate telemetry - start");
+    if (environmentTelemetryModule == nullptr) {
+        LOG_DEBUG("SdLoggerModule | generate telemetry - abort: no Telemetry module");
+        return "";
+    }
+
+    // const bool moduleEnabled = environmentTelemetryModule->enabled;
+
+    /// BAD CODE !!!
+    /// we actually READ new telemetry from sensors
+    //! \todo read last saved data from TelemetryModule
+    meshtastic_Telemetry m = meshtastic_Telemetry_init_zero;
+    const bool readTelemetryResult = environmentTelemetryModule->getEnvironmentTelemetry(&m);
+    if (!readTelemetryResult)
+        LOG_DEBUG("FALSE from telemetry module");
+
+    auto &envTelemetry = m.variant.environment_metrics;
+    const char * logValue = envTelemetry.has_temperature ? "TRUE" : "FALSE";
+    LOG_DEBUG("telemetry: time %d; variant %d, temp %s %f",
+        m.time, m.which_variant, logValue, envTelemetry.temperature);
+
+    std::string result;
+    if (envTelemetry.has_temperature)
+        result += std::string("TEMP;") + toTelemetryRoundedString(envTelemetry.temperature) + std::string(";");
+
+    if (envTelemetry.has_relative_humidity)
+        result += std::string("HUMID;") + toTelemetryRoundedString(envTelemetry.relative_humidity) + std::string(";");
+
+    if (envTelemetry.barometric_pressure != 0)
+        result += std::string("PRESS;") + toTelemetryRoundedString(envTelemetry.barometric_pressure) + std::string(";");
+
+    // /// remove last ";" if there is any
+    // const size_t resultSize = result.size();
+    // if (resultSize > 0)
+    //     result.resize(resultSize - 1);
+
+    LOG_DEBUG("SdLoggerModule | generate telemetry - end | result: %s", result.c_str());
+    return result;
 }
 
 std::string SdLoggerModule::generateDeviceInfoLog() const
@@ -71,13 +132,39 @@ std::string SdLoggerModule::generateDeviceInfoLog() const
     const std::string message =
             std::string("ID;") + std::string(ownerId)
         + std::string(";NAME;") + std::string(ownerShortName)
-        + std::string(";FULLNAME;") + std::string(ownerFullName);
+        + std::string(";FULLNAME;") + std::string(ownerFullName)
+        + std::string(";");
 
-    LOG_DEBUG("SdLoggerModule | generate device info - end");
+    LOG_DEBUG("SdLoggerModule | generate device info - end | result: %s", message.c_str());
     return message;
 }
 
-std::string SdLoggerModule::generateGpsLog(std::string &dateString) const 
+std::string SdLoggerModule::generateFilename() const
+{
+    const bool requestLocalTime = false;
+    uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, requestLocalTime);
+    if (rtc_sec == 0)
+        return "NO-DATE-FILE";
+
+    struct tm  gmTime{};
+    const time_t stampT = static_cast<time_t>(rtc_sec);
+    gmTime = *gmtime(&stampT);
+
+    constexpr int GMTIME_YEAR_FIX = 1900;
+    constexpr int GMTIME_MONTH_FIX = 1;
+    gmTime.tm_year += GMTIME_YEAR_FIX;
+    gmTime.tm_mon += GMTIME_MONTH_FIX;
+
+    const std::string yearStr = std::to_string(gmTime.tm_year);
+    const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
+    const std::string dayStr = toStringWithZeros(gmTime.tm_mday, 2);
+    std::string dateString = yearStr + "-" + monthStr + "-" + dayStr;
+
+    LOG_DEBUG("timestamp from RTC: %d, date string: %s", rtc_sec, dateString.c_str());
+    return dateString;
+}
+
+std::string SdLoggerModule::generateGpsLog() const
 {
     LOG_DEBUG("SdLoggerModule | generate GPS info - start");
     const auto &p = localPosition;
@@ -94,7 +181,7 @@ std::string SdLoggerModule::generateGpsLog(std::string &dateString) const
     const std::string yearStr = std::to_string(gmTime.tm_year);
     const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
     const std::string dayStr = toStringWithZeros(gmTime.tm_mday, 2);
-    dateString = yearStr + "-" + monthStr + "-" + dayStr;
+    const std::string dateString = yearStr + "-" + monthStr + "-" + dayStr;
 
     const std::string hoursStr = toStringWithZeros(gmTime.tm_hour, 2);
     const std::string minutesStr = toStringWithZeros(gmTime.tm_min, 2);
@@ -120,7 +207,8 @@ std::string SdLoggerModule::generateGpsLog(std::string &dateString) const
         + std::string(";LAT;") + std::to_string(lat)
         + std::string(";LON;") + std::to_string(lon)
         + std::string(";ALT;") + std::to_string(p.altitude)
-        + std::string(";SATS;") + std::to_string(p.sats_in_view);
+        + std::string(";SATS;") + std::to_string(p.sats_in_view)
+        + std::string(";");
 
     LOG_DEBUG("SdLoggerModule | generate GPS info - end");
     return message;
