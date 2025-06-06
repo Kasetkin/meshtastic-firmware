@@ -21,6 +21,8 @@
 #define PMSA003I_WARMUP_MS 30000
 #endif
 
+AirQualityTelemetryModule *airQualityTelemetryModule;
+
 int32_t AirQualityTelemetryModule::runOnce()
 {
     /*

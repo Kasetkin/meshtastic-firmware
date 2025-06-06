@@ -64,4 +64,5 @@ class AirQualityTelemetryModule : private concurrency::OSThread, public Protobuf
     uint32_t lastSentToMesh = 0;
 };
 
+extern AirQualityTelemetryModule *airQualityTelemetryModule;
 #endif

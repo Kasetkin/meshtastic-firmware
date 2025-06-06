@@ -188,6 +188,8 @@ IndicatorSensor indicatorSensor;
 #include "graphics/ScreenFonts.h"
 #include <Throttle.h>
 
+EnvironmentTelemetryModule *environmentTelemetryModule;
+
 int32_t EnvironmentTelemetryModule::runOnce()
 {
     if (sleepOnNextExecution == true) {
@@ -320,6 +322,7 @@ int32_t EnvironmentTelemetryModule::runOnce()
             lastSentToPhone = millis();
         }
     }
+    result = min(result, moduleConfig.telemetry.environment_update_interval);
     return min(sendToPhoneIntervalMs, result);
 }
 
