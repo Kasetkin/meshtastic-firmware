@@ -207,9 +207,9 @@ void setupModules()
         new DeviceTelemetryModule();
 #endif
 #if HAS_SENSOR && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
-        new EnvironmentTelemetryModule();
+        environmentTelemetryModule = new EnvironmentTelemetryModule();
         if (nodeTelemetrySensorsMap[meshtastic_TelemetrySensorType_PMSA003I].first > 0) {
-            new AirQualityTelemetryModule();
+            airQualityTelemetryModule = new AirQualityTelemetryModule();
         }
 #if !MESHTASTIC_EXCLUDE_HEALTH_TELEMETRY
         if (nodeTelemetrySensorsMap[meshtastic_TelemetrySensorType_MAX30102].first > 0 ||
