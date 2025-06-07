@@ -209,7 +209,7 @@ std::string SdLoggerModule::generateGpsLog() const
         + std::string(";ALT;") + std::to_string(p.altitude)
         + std::string(";SATS;") + std::to_string(p.sats_in_view)
         + std::string(";HDOP;") + std::to_string(p.HDOP)
-        + std::string(";VDOP;") + std::to_string(p.VDOP)
+        // + std::string(";VDOP;") + std::to_string(p.VDOP)
         + std::string(";");
 
     LOG_DEBUG("SdLoggerModule | generate GPS info - end");
