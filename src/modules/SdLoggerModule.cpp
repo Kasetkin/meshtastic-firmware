@@ -35,6 +35,11 @@ int32_t SdLoggerModule::runOnce()
     return static_cast<int32_t>(LOG_PERIOD_MS);
 }
 
+std::string SdLoggerModule::dopToMeters(const uint32_t dop)
+{
+    const auto dv = std::div(dop, 100);
+    return std::to_string(dv.quot) + '.' + std::to_string(dv.rem);
+}
 
 std::string SdLoggerModule::toStringWithZeros(const int value, const size_t numberOfDigits)
 {
@@ -208,8 +213,8 @@ std::string SdLoggerModule::generateGpsLog() const
         + std::string(";LON;") + std::to_string(lon)
         + std::string(";ALT;") + std::to_string(p.altitude)
         + std::string(";SATS;") + std::to_string(p.sats_in_view)
-        + std::string(";HDOP;") + std::to_string(p.HDOP)
-        // + std::string(";VDOP;") + std::to_string(p.VDOP)
+        + std::string(";HDOP;") + dopToMeters(p.HDOP)
+        // + std::string(";VDOP;") + dopToMeters(p.VDOP)
         + std::string(";");
 
     LOG_DEBUG("SdLoggerModule | generate GPS info - end");

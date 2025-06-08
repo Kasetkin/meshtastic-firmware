@@ -36,6 +36,7 @@ class SdLoggerModule : public SinglePortModule, private concurrency::OSThread
     std::string generateTelemetryLog() const;
     std::string generateDeviceInfoLog() const;
 
+    static std::string dopToMeters(const uint32_t dop);
     static std::string toStringWithZeros(const int value, const size_t numberOfDigits);
     /// always 3 digits after '.'
     static std::string toTelemetryRoundedString(const float value);
