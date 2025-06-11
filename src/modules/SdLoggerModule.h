@@ -26,6 +26,7 @@ class SdLoggerModule : public SinglePortModule, private concurrency::OSThread
     static const char * logsPath;
     static constexpr meshtastic_PortNum fakePortNumber = meshtastic_PortNum_UNKNOWN_APP;
     static const unsigned long LOG_PERIOD_MS = 1 * 1000;
+    static const uint32_t MAX_GPS_TO_RTC_MAX_TIME_DELTA_SEC = 1;
 
     unsigned long lastLogTime = millis();
     std::string currentDate;
@@ -35,6 +36,7 @@ class SdLoggerModule : public SinglePortModule, private concurrency::OSThread
     std::string generateGpsLog() const;
     std::string generateTelemetryLog() const;
     std::string generateDeviceInfoLog() const;
+    std::string generateDevicePowerLog() const;
 
     static std::string dopToMeters(const uint32_t dop);
     static std::string toStringWithZeros(const int value, const size_t numberOfDigits);

@@ -3,6 +3,7 @@
 #include "FSCommon.h"
 #include "SPILock.h"
 #include "RTC.h"
+#include "main.h"
 #include "configuration.h"
 
 #include <SD.h>
@@ -69,10 +70,11 @@ void SdLoggerModule::logCurrentState()
 
     const std::string filename = generateFilename() + ".csv";
     const std::string deviceLog = generateDeviceInfoLog();
+    const std::string devicePower = generateDevicePowerLog();
     const std::string gpsLog = generateGpsLog();
     const std::string envTelemetry = generateTelemetryLog();
 
-    const std::string fullLogMessage = deviceLog + gpsLog + envTelemetry + std::string("\n");
+    const std::string fullLogMessage = deviceLog + devicePower + gpsLog + envTelemetry + std::string("\n");
     LOG_DEBUG("SdLoggerModule | message generation - end");
     LOG_DEBUG("SdLoggerModule | full message: \\");
     LOG_DEBUG("%s \\",  deviceLog.c_str());
@@ -109,13 +111,13 @@ std::string SdLoggerModule::generateTelemetryLog() const
         m.time, m.which_variant, logValue, envTelemetry.temperature);
 
     std::string result;
-    if (envTelemetry.has_temperature)
+    if (envTelemetry.has_temperature && !std::isnan(envTelemetry.temperature))
         result += std::string("TEMP;") + toTelemetryRoundedString(envTelemetry.temperature) + std::string(";");
 
-    if (envTelemetry.has_relative_humidity)
+    if (envTelemetry.has_relative_humidity && !std::isnan(envTelemetry.relative_humidity))
         result += std::string("HUMID;") + toTelemetryRoundedString(envTelemetry.relative_humidity) + std::string(";");
 
-    if (envTelemetry.barometric_pressure != 0)
+    if (envTelemetry.has_barometric_pressure && !std::isnan(envTelemetry.barometric_pressure))
         result += std::string("PRESS;") + toTelemetryRoundedString(envTelemetry.barometric_pressure) + std::string(";");
 
     // /// remove last ";" if there is any
@@ -127,6 +129,24 @@ std::string SdLoggerModule::generateTelemetryLog() const
     return result;
 }
 
+std::string SdLoggerModule::generateDevicePowerLog() const
+{
+    LOG_DEBUG("SdLoggerModule | generate device power log - start");
+    std::string message;
+#ifdef HAS_PMU
+    if (pmu_found && PMU) {
+        const int batteryPercent = PMU->getBatteryPercent(); /// 0 .. 100
+        const uint16_t batteryVoltage = PMU->getBattVoltage(); /// millivolt
+        message =
+            std::string("BATVOLT;") + std::to_string(batteryVoltage)
+            + std::string(";BATPERC;") + std::to_string(batteryPercent)
+            + std::string(";");
+    }
+#endif
+    LOG_DEBUG("SdLoggerModule | generate device power log - end | result: %s", message.c_str());
+    return message;
+}
+
 std::string SdLoggerModule::generateDeviceInfoLog() const
 {
     LOG_DEBUG("SdLoggerModule | generate device info - start");
@@ -134,10 +154,14 @@ std::string SdLoggerModule::generateDeviceInfoLog() const
     const auto &ownerShortName = devicestate.owner.short_name;
     const auto &ownerFullName = devicestate.owner.long_name;
 
+    const bool requestLocalTime = false;
+    uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, requestLocalTime);
+
     const std::string message =
             std::string("ID;") + std::string(ownerId)
         + std::string(";NAME;") + std::string(ownerShortName)
         + std::string(";FULLNAME;") + std::string(ownerFullName)
+        + std::string(";RTCSEC;") + std::to_string(rtc_sec)
         + std::string(";");
 
     LOG_DEBUG("SdLoggerModule | generate device info - end | result: %s", message.c_str());
@@ -169,10 +193,38 @@ std::string SdLoggerModule::generateFilename() const
     return dateString;
 }
 
+bool locationHas3DFix(const meshtastic_Position &p)
+{
+    if (p.fix_quality >= 1 && p.fix_quality <= 5) {
+#ifndef TINYGPS_OPTION_NO_CUSTOM_FIELDS
+        if (p.fix_type == 3) // zero means "no data received"
+#endif
+            return true;
+    }
+
+    return false;
+}
+
 std::string SdLoggerModule::generateGpsLog() const
 {
     LOG_DEBUG("SdLoggerModule | generate GPS info - start");
     const auto &p = localPosition;
+
+    if (!locationHas3DFix(p)) {
+        LOG_DEBUG("SdLoggerModule | generate GPS info - end | no fix");
+        return "";
+    }
+
+    const bool requestLocalTime = false;
+    uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, requestLocalTime);
+    const bool correctTime = (rtc_sec >= p.timestamp - MAX_GPS_TO_RTC_MAX_TIME_DELTA_SEC)
+        && (rtc_sec <= p.timestamp + MAX_GPS_TO_RTC_MAX_TIME_DELTA_SEC);
+
+    if (!correctTime) {
+        LOG_DEBUG("SdLoggerModule | generate GPS info - end | too old coordinates!!! ");
+        LOG_DEBUG("SdLoggerModule | rtc time %d, GPS time %d", rtc_sec, p.timestamp);
+        return "";
+    }
 
     struct tm  gmTime{};
     const time_t stampT = static_cast<time_t>(p.timestamp);
@@ -209,12 +261,14 @@ std::string SdLoggerModule::generateGpsLog() const
     const double lon = static_cast<double>(p.longitude_i) * 1e-7;
     const std::string message =
         std::string("DT;") + dateTimeStringFull
+        + std::string(";GNSSSEC;") + std::to_string(p.timestamp)
         + std::string(";LAT;") + std::to_string(lat)
         + std::string(";LON;") + std::to_string(lon)
         + std::string(";ALT;") + std::to_string(p.altitude)
         + std::string(";SATS;") + std::to_string(p.sats_in_view)
+        + std::string(";PDOP;") + dopToMeters(p.PDOP)
         + std::string(";HDOP;") + dopToMeters(p.HDOP)
-        // + std::string(";VDOP;") + dopToMeters(p.VDOP)
+        + std::string(";VDOP;") + dopToMeters(p.VDOP)
         + std::string(";");
 
     LOG_DEBUG("SdLoggerModule | generate GPS info - end");
