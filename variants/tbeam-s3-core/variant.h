@@ -68,4 +68,5 @@
 
 #define USE_SH1106
 
-#define DEBUG_MUTE
+/// in GPS logger case doesn't really matter
+// #define DEBUG_MUTE
