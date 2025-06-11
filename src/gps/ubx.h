@@ -217,12 +217,12 @@ static const uint8_t _message_GLL[] = {
     0x00        // Reserved
 };
 
-// Disable GSA. GSA - GPS DOP and active satellites, used for detailing the satellites used in the positioning and
+// Enable GSA. GSA - GPS DOP and active satellites, used for detailing the satellites used in the positioning and
 // the DOP (Dilution of Precision)
 static const uint8_t _message_GSA[] = {
     0xF0, 0x02, // NMEA ID for GSA
     0x00,       // Rate for DDC
-    0x00,       // Rate for UART1
+    0x01,       // Rate for UART1
     0x00,       // Rate for UART2
     0x00,       // Rate for USB useful for native linux
     0x00,       // Rate for SPI
@@ -437,14 +437,45 @@ static const uint8_t _message_VALSET_DISABLE_NMEA_BBR[] = {0x00, 0x02, 0x00, 0x0
 static const uint8_t _message_VALSET_DISABLE_TXT_INFO_RAM[] = {0x00, 0x01, 0x00, 0x00, 0x07, 0x00, 0x92, 0x20, 0x03};
 static const uint8_t _message_VALSET_DISABLE_TXT_INFO_BBR[] = {0x00, 0x02, 0x00, 0x00, 0x07, 0x00, 0x92, 0x20, 0x03};
 
-static const uint8_t _message_VALSET_ENABLE_NMEA_RAM[] = {0x00, 0x01, 0x00, 0x00, 0xbb, 0x00, 0x91,
-                                                          0x20, 0x01, 0xac, 0x00, 0x91, 0x20, 0x01};
-static const uint8_t _message_VALSET_ENABLE_NMEA_BBR[] = {0x00, 0x02, 0x00, 0x00, 0xbb, 0x00, 0x91,
-                                                          0x20, 0x01, 0xac, 0x00, 0x91, 0x20, 0x01};
-static const uint8_t _message_VALSET_DISABLE_SBAS_RAM[] = {0x00, 0x01, 0x00, 0x00, 0x20, 0x00, 0x31,
-                                                           0x10, 0x00, 0x05, 0x00, 0x31, 0x10, 0x00};
-static const uint8_t _message_VALSET_DISABLE_SBAS_BBR[] = {0x00, 0x02, 0x00, 0x00, 0x20, 0x00, 0x31,
-                                                           0x10, 0x00, 0x05, 0x00, 0x31, 0x10, 0x00};
+static const uint8_t _message_VALSET_ENABLE_NMEA_RAM[] = {
+    0x00, 0x01, 0x00, 0x00,
+    0xbb, 0x00, 0x91, 0x20, 0x01, // CFG-MSGOUT-NMEA_ID_GGA_UART1 + rate '1'
+    0xac, 0x00, 0x91, 0x20, 0x01, // CFG-MSGOUT-NMEA_ID_RMC_UART1 + rate '1'
+    0xc0, 0x00, 0x91, 0x20, 0x01  // CFG-MSGOUT-NMEA_ID_GSA_UART1 + rate '1'
+};
+
+static const uint8_t _message_VALSET_ENABLE_NMEA_BBR[] = {
+    0x00, 0x02, 0x00, 0x00,
+    0xbb, 0x00, 0x91, 0x20, 0x01, // CFG-MSGOUT-NMEA_ID_GGA_UART1 + rate '1'
+    0xac, 0x00, 0x91, 0x20, 0x01, // CFG-MSGOUT-NMEA_ID_RMC_UART1 + rate '1'
+    0xc0, 0x00, 0x91, 0x20, 0x01  // CFG-MSGOUT-NMEA_ID_GSA_UART1 + rate '1'
+};
+
+static const uint8_t _message_VALSET_DISABLE_SBAS_RAM[] = {
+    0x00, 0x01, 0x00, 0x00,
+    0x20, 0x00, 0x31, 0x10, 0x00, // CFG-SIGNAL-SBAS_ENA + '0' (== disable)
+    0x05, 0x00, 0x31, 0x10, 0x00  // CFG-SIGNAL-SBAS_L1CA_ENA  + '0' (== disable)
+};
+
+static const uint8_t _message_VALSET_DISABLE_SBAS_BBR[] = {
+    0x00, 0x02, 0x00, 0x00,
+    0x20, 0x00, 0x31, 0x10, 0x00, // CFG-SIGNAL-SBAS_ENA + '0' (== disable)
+    0x05, 0x00, 0x31, 0x10, 0x00  // CFG-SIGNAL-SBAS_L1CA_ENA  + '0' (== disable)
+};
+
+static const uint8_t _message_VALSET_MEASURES_RATE_RAM[] = {
+    0x00, 0x01, 0x00, 0x00,
+    0x01, 0x00, 0x21, 0x30, 0xf4, 0x01, // CFG-RATE-MEAS  + '500' as HEX uint16 => 2 measurements per second
+    0x02, 0x00, 0x21, 0x30, 0x02, 0x00, // CFG-RATE-NAV + '2' as HEX uint16 => 1 nav. solution from 2 measurements => 1 solution per second
+};
+
+static const uint8_t _message_VALSET_MEASURES_RATE_BBR[] = {
+    0x00, 0x02, 0x00, 0x00,
+    0x01, 0x00, 0x21, 0x30, 0xf4, 0x01, // CFG-RATE-MEAS  + '500' as HEX uint16 => 2 measurements per second
+    0x02, 0x00, 0x21, 0x30, 0x02, 0x00, // CFG-RATE-NAV + '2' as HEX uint16 => 1 nav. solution from 2 measurements => 1 solution per second
+};
+
+
 
 /*
 Operational issues with the M10:

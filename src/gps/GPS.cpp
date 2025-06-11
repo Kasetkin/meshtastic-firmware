@@ -634,8 +634,8 @@ bool GPS::setup()
             // Turn off GSV messages, we don't really care about which and where the sats are, maybe someday.
             _serial_gps->write("$CFGMSG,0,3,0\r\n");
             delay(250);
-            // Turn off GSA messages, TinyGPS++ doesn't use this message.
-            _serial_gps->write("$CFGMSG,0,2,0\r\n");
+            // Enable GSA messages, and use 'custom objects' from TinyGPS++
+            _serial_gps->write("$CFGMSG,0,2,1\r\n");
             delay(250);
             // Turn off NOTICE __TXT messages, these may provide Unicore some info but we don't care.
             _serial_gps->write("$CFGMSG,6,0,0\r\n");
@@ -789,6 +789,11 @@ bool GPS::setup()
             delay(750);
             // Next enable wanted NMEA messages in RAM layer
             SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_ENABLE_NMEA_RAM, "enable messages for M10 GPS RAM", 500);
+            delay(750);
+
+            SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_MEASURES_RATE_BBR, "set GNSS measures rate 1Hz for M10 BBR", 300);
+            delay(750);
+            SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_MEASURES_RATE_RAM, "set GNSS measures rate 1Hz for M10 RAM", 500);
             delay(750);
 
             // As the M10 has no flash, the best we can do to preserve the config is to set it in RAM and BBR.
@@ -1448,8 +1453,10 @@ GPS *GPS::createGps()
 // when fixed upstream, can be un-disabled to enable 3D FixType and PDOP
 #ifndef TINYGPS_OPTION_NO_CUSTOM_FIELDS
     // see NMEAGPS.h
-    gsafixtype.begin(reader, NMEA_MSG_GXGSA, 2);
-    gsapdop.begin(reader, NMEA_MSG_GXGSA, 15);
+    new_gps->gsafixtype.begin(new_gps->reader, NMEA_MSG_GXGSA, 2);
+    new_gps->gsapdop.begin(new_gps->reader, NMEA_MSG_GXGSA, 15);
+    new_gps->gsahdop.begin(new_gps->reader, NMEA_MSG_GXGSA, 16);
+    new_gps->gsavdop.begin(new_gps->reader, NMEA_MSG_GXGSA, 17);
     LOG_DEBUG("Use " NMEA_MSG_GXGSA " for 3DFIX and PDOP");
 #endif
 
@@ -1640,8 +1647,9 @@ bool GPS::lookForLocation()
 
     // Dilution of precision (an accuracy metric) is reported in 10^2 units, so we need to scale down when we use it
 #ifndef TINYGPS_OPTION_NO_CUSTOM_FIELDS
-    p.HDOP = reader.hdop.value();
     p.PDOP = TinyGPSPlus::parseDecimal(gsapdop.value());
+    p.HDOP = TinyGPSPlus::parseDecimal(gsahdop.value());
+    p.VDOP = TinyGPSPlus::parseDecimal(gsavdop.value());
 #else
     // FIXME! naive PDOP emulation (assumes VDOP==HDOP)
     // correct formula is PDOP = SQRT(HDOP^2 + VDOP^2)
@@ -1705,7 +1713,11 @@ bool GPS::hasLock()
     if (fixQual >= 1 && fixQual <= 5) {
 #ifndef TINYGPS_OPTION_NO_CUSTOM_FIELDS
         // Use GPGSA fix type 2D/3D (better) if available
-        if (fixType == 3 || fixType == 0) // zero means "no data received"
+        // 0 -- no data,
+        // 1 -- Fix not available
+        // 2 -- 2D fix, good or not enough ???
+        // 3 -- 3D fix
+        if (fixType == 3 || fixType == 2 || fixType == 0)
 #endif
             return true;
     }

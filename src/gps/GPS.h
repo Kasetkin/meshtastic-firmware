@@ -154,8 +154,10 @@ class GPS : private concurrency::OSThread
 #ifndef TINYGPS_OPTION_NO_CUSTOM_FIELDS
     // (20210908) TinyGps++ can only read the GPGSA "FIX TYPE" field
     // via optional feature "custom fields", currently disabled (bug #525)
-    TinyGPSCustom gsafixtype; // custom extract fix type from GPGSA
-    TinyGPSCustom gsapdop;    // custom extract PDOP from GPGSA
+    TinyGPSCustom gsafixtype; // custom extract fix type from GPGSA, , GSA element #2
+    TinyGPSCustom gsapdop;    // custom extract PDOP from GPGSA, GSA element #15
+    TinyGPSCustom gsahdop;    // custom extract HDOP from GPGSA, GSA element #16
+    TinyGPSCustom gsavdop;    // custom extract VDOP from GPGSA, GSA element #17
     uint8_t fixType = 0;      // fix type from GPGSA
 #endif
 
