@@ -187,10 +187,12 @@ std::string SdLoggerModule::generateFilename() const
     const std::string yearStr = std::to_string(gmTime.tm_year);
     const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
     const std::string dayStr = toStringWithZeros(gmTime.tm_mday, 2);
-    std::string dateString = yearStr + "-" + monthStr + "-" + dayStr;
+    const auto &ownerFullName = devicestate.owner.long_name;
+    std::string filename = yearStr + "-" + monthStr + "-" + dayStr + "-" + ownerFullName;
 
-    LOG_DEBUG("timestamp from RTC: %d, date string: %s", rtc_sec, dateString.c_str());
-    return dateString;
+    LOG_DEBUG("timestamp from RTC: %d, date string: %s", rtc_sec, filename.c_str());
+
+    return filename;
 }
 
 bool locationHas3DFix(const meshtastic_Position &p)
