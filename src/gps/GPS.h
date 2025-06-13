@@ -150,6 +150,7 @@ class GPS : private concurrency::OSThread
     TinyGPSPlus reader;
     uint8_t fixQual = 0; // fix quality from GPGGA
     uint32_t lastChecksumFailCount = 0;
+    static constexpr int32_t MAX_THREAD_SLEEP_TIME_MS = 5000;
 
 #ifndef TINYGPS_OPTION_NO_CUSTOM_FIELDS
     // (20210908) TinyGps++ can only read the GPGSA "FIX TYPE" field

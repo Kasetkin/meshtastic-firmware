@@ -1154,7 +1154,12 @@ int32_t GPS::runOnce()
 
     // 9600bps is approx 1 byte per msec, so considering our buffer size we never need to wake more often than 200ms
     // if not awake we can run super infrquently (once every 5 secs?) to see if we need to wake.
-    return (powerState == GPS_ACTIVE) ? GPS_THREAD_INTERVAL : 5000;
+    const int32_t sleepTime = static_cast<int32_t>(scheduling.msUntilNextSearch());
+    const int32_t threadSleepTime = std::min(sleepTime, MAX_THREAD_SLEEP_TIME_MS);
+    const int32_t finalSleepTime = ((powerState == GPS_ACTIVE) || (powerState == GPS_IDLE)) ? GPS_THREAD_INTERVAL : threadSleepTime;
+    LOG_DEBUG("thread state is %s, sleep for %d ms", getGPSPowerStateString(powerState),  finalSleepTime);
+
+    return finalSleepTime;
 }
 
 // clear the GPS rx/tx buffer as quickly as possible
