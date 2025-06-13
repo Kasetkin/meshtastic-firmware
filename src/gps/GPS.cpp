@@ -791,10 +791,10 @@ bool GPS::setup()
             SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_ENABLE_NMEA_RAM, "enable messages for M10 GPS RAM", 500);
             delay(750);
 
-            // SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_MEASURES_RATE_BBR, "set GNSS measures rate 1Hz for M10 BBR", 300);
-            // delay(750);
-            // SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_MEASURES_RATE_RAM, "set GNSS measures rate 1Hz for M10 RAM", 500);
-            // delay(750);
+            SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_MEASURES_RATE_BBR, "set GNSS measures rate 1Hz for M10 BBR", 300);
+            delay(750);
+            SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_MEASURES_RATE_RAM, "set GNSS measures rate 1Hz for M10 RAM", 500);
+            delay(750);
 
             // As the M10 has no flash, the best we can do to preserve the config is to set it in RAM and BBR.
             // BBR will survive a restart, and power off for a while, but modules with small backup
