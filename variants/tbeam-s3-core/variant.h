@@ -52,10 +52,12 @@
 #define LORA_MOSI 11
 #define LORA_CS 10
 
-#define GPS_RX_PIN 9
-#define GPS_TX_PIN 8
-#define GPS_WAKEUP_PIN 7
-#define GPS_1PPS_PIN 6
+#define GPS_RX_PIN 45
+#define GPS_TX_PIN 46
+// #define GPS_RX_PIN 9
+// #define GPS_TX_PIN 8
+// #define GPS_WAKEUP_PIN 7
+// #define GPS_1PPS_PIN 6
 
 #define HAS_SDCARD // Have SPI interface SD card slot
 #define SDCARD_USE_SPI1
@@ -69,5 +71,5 @@
 #define USE_SH1106
 
 /// in GPS logger case doesn't really matter
-// #define GPS_DEBUG
+#define GPS_DEBUG
 // #define DEBUG_MUTE

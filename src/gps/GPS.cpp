@@ -623,6 +623,67 @@ bool GPS::setup()
                     LOG_WARN("ATGM336H: Could not enable NMEA MSG: %d", fields[i]);
                 }
             }
+        } else if (gnssModel == GNSS_MODEL_UM980) {
+            const uint32_t defaultDelay = 50;
+            _serial_gps->write("UNLOG\r\n");
+            delay(defaultDelay);
+
+#ifdef GPS_DEBUG
+            LOG_DEBUG("requesting UM980 full configuration");
+            _serial_gps->write("CONFIG\r\n");
+            delay(1000);
+            /// we can check here if SIGNALGROUP == 2 or not and write some logic
+#endif
+            /// but for now just send 'signalgroup 2' to the module
+            /// and if it is already has it, then after small time
+            /// it will be ready to answer with 'VERSION'
+            /// and if 'signalgroup' changed,
+            /// it will be rebooting for ~10 seconds
+            _serial_gps->write("CONFIG SIGNALGROUP 2\r\n");
+            delay(defaultDelay);
+            /// check
+            clearBuffer();
+            _serial_gps->write("VERSION\r\n");
+            const std::vector<ChipInfo> responseMap = {
+                {"UM980", "UM980", GNSS_MODEL_UM980}
+            };
+            GnssModel_t detectedDriver = getProbeResponse(1000, responseMap);
+            const bool moduleIsRebooting = detectedDriver != GNSS_MODEL_UM980;
+            if (moduleIsRebooting) {
+                LOG_DEBUG("UM980 SIGNALGROUP: module is rebooting after change");
+                delay(10000);
+            } else {
+                LOG_DEBUG("UM980 SIGNALGROUP: no changes");
+            }
+
+            _serial_gps->write("MODE ROVER SURVEY DEFAULT\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG RTK TIMEOUT 0\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG DGPS TIMEOUT 0\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG MMP ENABLE\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG PVTALG MULTI\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG IONMODE GPSK8\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG ANTIJAM FORCE\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG PSRVELDRPOS DISABLE\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("CONFIG NMEA0183 V411\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("UNMASK ALL\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("GPGGA 1\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("GPGSA 1\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("GPRMC 1\r\n");
+            delay(defaultDelay);
+            _serial_gps->write("SAVECONFIG\r\n");
+            delay(defaultDelay);
         } else if (gnssModel == GNSS_MODEL_UC6580) {
             // The Unicore UC6580 can use a lot of sat systems, enable it to
             // use GPS L1 & L5 + BDS B1I & B2a + GLONASS L1 + GALILEO E1 & E5a + SBAS + QZSS
@@ -942,7 +1003,8 @@ void GPS::setPowerPMU(bool on)
             on ? PMU->enablePowerOutput(XPOWERS_ALDO3) : PMU->disablePowerOutput(XPOWERS_ALDO3);
         } else if (HW_VENDOR == meshtastic_HardwareModel_LILYGO_TBEAM_S3_CORE) {
             // t-beam-s3-core GNSS  power channel
-            on ? PMU->enablePowerOutput(XPOWERS_ALDO4) : PMU->disablePowerOutput(XPOWERS_ALDO4);
+            // on ? PMU->enablePowerOutput(XPOWERS_ALDO4) : PMU->disablePowerOutput(XPOWERS_ALDO4);
+            on ? PMU->enablePowerOutput(XPOWERS_DCDC5) : PMU->disablePowerOutput(XPOWERS_DCDC5);
         }
     } else if (model == XPOWERS_AXP192) {
         // t-beam v1.1 GNSS  power channel
@@ -1237,8 +1299,13 @@ GnssModel_t GPS::probe(int serialSpeed)
     delay(20);
 
     // Unicore UFirebirdII Series: UC6580, UM620, UM621, UM670A, UM680A, or UM681A
-    std::vector<ChipInfo> unicore = {{"UC6580", "UC6580", GNSS_MODEL_UC6580}, {"UM600", "UM600", GNSS_MODEL_UC6580}};
-    PROBE_FAMILY("Unicore Family", "$PDTINFO", unicore, 500);
+    std::vector<ChipInfo> unicoreFirebird2 = {{"UC6580", "UC6580", GNSS_MODEL_UC6580}, {"UM600", "UM600", GNSS_MODEL_UC6580}};
+    PROBE_FAMILY("Unicore Firebird2 Family", "$PDTINFO", unicoreFirebird2, 500);
+
+    std::vector<ChipInfo> unicoreNebulas4 = {
+        {"UM980", "UM980", GNSS_MODEL_UM980}
+    };
+    PROBE_FAMILY("Unicore NebulasIV Family", "VERSION", unicoreNebulas4, 500);
 
     std::vector<ChipInfo> atgm = {
         {"ATGM336H", "$GPTXT,01,01,02,HW=ATGM336H", GNSS_MODEL_ATGM336H},

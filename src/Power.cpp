@@ -1001,8 +1001,14 @@ bool Power::axpChipInit()
              * The default ALDO4 is off, you need to turn on the GNSS power first, otherwise it will be invalid during
              * initialization
              */
-            PMU->setPowerChannelVoltage(XPOWERS_ALDO4, 3300);
-            PMU->enablePowerOutput(XPOWERS_ALDO4);
+            // PMU->setPowerChannelVoltage(XPOWERS_ALDO4, 3300);
+            // PMU->enablePowerOutput(XPOWERS_ALDO4);
+            delay(1000);
+            LOG_DEBUG("setup DCDC5 to 3.4V");
+            PMU->setPowerChannelVoltage(XPOWERS_DCDC5, 3400);
+            PMU->enablePowerOutput(XPOWERS_DCDC5);
+            delay(1000);
+
 
             // lora radio power channel
             PMU->setPowerChannelVoltage(XPOWERS_ALDO3, 3300);
@@ -1040,7 +1046,7 @@ bool Power::axpChipInit()
 
             // not use channel
             PMU->disablePowerOutput(XPOWERS_DCDC2); // not elicited
-            PMU->disablePowerOutput(XPOWERS_DCDC5); // not elicited
+            // PMU->disablePowerOutput(XPOWERS_DCDC5); // not elicited
             PMU->disablePowerOutput(XPOWERS_DLDO1); // Invalid power channel, it does not exist
             PMU->disablePowerOutput(XPOWERS_DLDO2); // Invalid power channel, it does not exist
             PMU->disablePowerOutput(XPOWERS_VBACKUP);
