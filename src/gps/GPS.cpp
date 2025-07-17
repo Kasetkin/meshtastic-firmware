@@ -712,7 +712,7 @@ bool GPS::setup()
             _serial_gps->write("CONFIG PPP ENABLE AUTO\r\n");
             delay(defaultDelay);
             /// we don't need 15cm precision, 70cm in horizontal and 100cm in vertical should be enough
-            _serial_gps->write("CONFIG PPP CONVERGE 70 100\r\n");
+            _serial_gps->write("CONFIG PPP CONVERGE 70 150\r\n");
             delay(defaultDelay);
             /// not sure if it is a good idea, but try to use more common datum instead of custom PPP
             _serial_gps->write("CONFIG PPP DATUM WGS84\r\n");
