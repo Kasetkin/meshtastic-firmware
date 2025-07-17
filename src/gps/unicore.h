@@ -35,6 +35,20 @@ enum class PositionVelocityType : uint16_t {
     NO_VALUE            /// not from Unicore docs 
 };
 
+enum class PppDatumId : uint16_t {
+    NO_VALUE = 0,
+    WGS84 = 1,
+    B2b = 2
+};
+
+enum class PppService : uint16_t {
+    NO_VALUE = 0,
+    GALILEO = 1,    /// a.k.a. E6-HAS
+    BEIDOU = 2,     /// a.k.a. B2b-PPP
+    QZSS = 3,       /// a.k.a. L6MDCPPP, QZSS L6E (MADOCA)
+    RXN = 4         /// \todo use real system name
+};
+
 /// maybe move to GPS.h after U-Blox or another manufacture PPP function is supported
 #define PPP_BAD_LATLON -1999999999
 struct PppInfo {
@@ -47,9 +61,13 @@ struct PppInfo {
     float lonStdDev = -1.0;
     float altStdDev = -1.0;
     int32_t solutionAge = -1.0;
+
     PppSolutionStatus solutionStatus = PppSolutionStatus::NO_VALUE;
     PositionVelocityType positionType = PositionVelocityType::NO_VALUE;
     int32_t satellites = -1;
+    PppDatumId datumId = PppDatumId::NO_VALUE;
+    PppService serviceId = PppService::NO_VALUE;
+    int32_t stationId = -1;
 };
 
 extern PppInfo localPPP;
@@ -58,6 +76,8 @@ extern PppInfo localPPP;
 int32_t parseDegreesLatLon(const char *str);
 PppSolutionStatus parseSolutionStatus(const char *str);
 PositionVelocityType parsePositionType(const char *str);
+PppDatumId parseDatumId(const char *str);
+PppService parsePppService(const int32_t stationId);
 
 const std::uint32_t aulCrcTable[256] =
 {
@@ -117,3 +137,5 @@ uint32_t computeUtxTime(const int32_t week, const int32_t milliSecsOfWeek, const
 
 std::string solutionStatusStr(const PppSolutionStatus &pppStatus);
 std::string positionTypeStr(const PositionVelocityType &posType);
+std::string serviceIdStr(const PppService &service);
+std::string datumIdStr(const PppDatumId &datum);

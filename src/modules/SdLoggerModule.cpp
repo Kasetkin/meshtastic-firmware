@@ -347,6 +347,8 @@ std::string SdLoggerModule::generatePppLog() const
     const std::string message =
         std::string("PPP_SOLUTION_STATUS;") + solutionStatusStr(p.solutionStatus)
         + std::string(";PPP_POSITION;") + positionTypeStr(p.positionType)
+        + std::string(";PPP_SERVICE;") + serviceIdStr(p.serviceId)
+        + std::string(";PPP_DATUM;") + datumIdStr(p.datumId)
         + std::string(";PPP_DT;") + dateTimeStringFull
         + std::string(";PPP_TIME;") + std::to_string(p.utxSeconds)
         + std::string(";PPP_AGE;") + std::to_string(p.solutionAge)
@@ -362,6 +364,7 @@ std::string SdLoggerModule::generatePppLog() const
         /// and result sould be ~ "-28.7422" in meters
         // + std::string(";UNDUL;") + std::to_string(p.altitude_geoidal_separation)
         + std::string(";PPP_SATS;") + std::to_string(p.satellites)
+        + std::string(";PPP_STATION_ID;") + std::to_string(p.stationId)
         + std::string(";PPP_LATSTDDEV;") + std::to_string(p.latStdDev)
         + std::string(";PPP_LONSTDDEV;") + std::to_string(p.lonStdDev)
         + std::string(";PPP_ALTSTDDEV;") + std::to_string(p.altStdDev)

@@ -176,7 +176,9 @@ class GPS : private concurrency::OSThread
     TinyGPSCustom pppnavAltStdDev;
     TinyGPSCustom pppnavSolAge;  // custom extract 'Solution Status' from PPPNAVA, element # ???
     TinyGPSCustom pppnavSatellites;
-
+    TinyGPSCustom pppnavDatumId;
+    TinyGPSCustom pppnavStationId; /// can be converted to System (B2b, E6-HAS, etc)
+    
     // PppInfo pppInfo;
     uint8_t fixType = 0;      // fix type from GPGSA
 #endif

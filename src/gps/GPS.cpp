@@ -1634,9 +1634,11 @@ GPS *GPS::createGps()
     new_gps->pppnavLat.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 11);
     new_gps->pppnavLon.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 12);
     new_gps->pppnavAlt.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 13);
+    new_gps->pppnavDatumId.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 15);
     new_gps->pppnavLatStdDev.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 16);
     new_gps->pppnavLonStdDev.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 17);
     new_gps->pppnavAltStdDev.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 18);
+    new_gps->pppnavStationId.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 19);
     new_gps->pppnavSolAge.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 21);
     new_gps->pppnavSatellites.begin(new_gps->reader, UNICORE_MSG_PPPNAV, 23);
 #endif
@@ -1846,6 +1848,9 @@ bool GPS::lookForLocation()
     localPPP.solutionAge = static_cast<int32_t>(atol(pppnavSolAge.value()));
     localPPP.solutionStatus = parseSolutionStatus(pppnavSolStatus.value());
     localPPP.positionType = parsePositionType(pppnavPosType.value());
+    localPPP.datumId = parseDatumId(pppnavDatumId.value());
+    localPPP.stationId = static_cast<int32_t>(atol(pppnavStationId.value()));
+    localPPP.serviceId = parsePppService(localPPP.stationId);
 
     uint32_t week = static_cast<int32_t>(atol(pppnavWeek.value()));
     uint32_t millisOfWeek = static_cast<int32_t>(atoll(pppnavSecsOFWeek.value()));

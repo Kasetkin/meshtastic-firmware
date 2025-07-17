@@ -132,6 +132,44 @@ PositionVelocityType parsePositionType(const char *str)
     return PositionVelocityType::NO_VALUE;
 }
 
+PppDatumId parseDatumId(const char *str)
+{
+    const std::string cppStr = prepareString(str);
+    if (cppStr == "WGS84")
+        return PppDatumId::WGS84;
+    else if (cppStr == "B2B")
+        return PppDatumId::B2b;
+    else
+        return PppDatumId::NO_VALUE;
+
+    return PppDatumId::NO_VALUE;
+}
+
+PppService parsePppService(const int32_t stationId)
+{
+    switch (stationId)
+    {
+    case 9901:
+        return PppService::GALILEO;
+    case 9959:
+        return PppService::BEIDOU;
+    case 9960:
+        return PppService::BEIDOU;
+    case 9961:
+        return PppService::BEIDOU;
+    case 9934:
+        return PppService::QZSS;
+    case 9936:
+        return PppService::QZSS;
+    case 9939:
+        return PppService::QZSS;
+    default:
+        return PppService::NO_VALUE;
+    }
+
+    return PppService::NO_VALUE;
+}
+
 std::uint32_t CalculateCRC32(std::uint8_t *szBuf, int iSize)
 {
     std::uint32_t ulCRC = 0;
@@ -234,6 +272,44 @@ std::string positionTypeStr(const PositionVelocityType &posType)
     case PositionVelocityType::PPP:
         return "PPP";
     case PositionVelocityType::NO_VALUE:
+        return "NO_VALUE";
+    default:
+        return "ERROR";
+    }
+
+    return "ERROR";
+}
+
+std::string serviceIdStr(const PppService &service)
+{
+    switch (service)
+    {
+    case PppService::GALILEO:
+        return "GALILEO";
+    case PppService::BEIDOU:
+        return "BEIDOU";
+    case PppService::QZSS:
+        return "QZSS";
+    case PppService::RXN:
+        return "RXN";
+    case PppService::NO_VALUE:
+        return "NO_VALUE";
+    default:
+        return "ERROR";
+    }
+
+    return "ERROR";
+}
+
+std::string datumIdStr(const PppDatumId &datum)
+{
+    switch (datum)
+    {
+    case PppDatumId::WGS84:
+        return "WGS84";
+    case PppDatumId::B2b:
+        return "B2b";
+    case PppDatumId::NO_VALUE:
         return "NO_VALUE";
     default:
         return "ERROR";
