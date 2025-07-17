@@ -10,6 +10,7 @@
 #include "input/RotaryEncoderInterruptImpl1.h"
 #include "input/UpDownInterruptImpl1.h"
 #include "modules/PositionModule.h"
+#include "unicore.h"
 
 // Allow defining the polarity of the ENABLE output.  default is active high
 #ifndef GPS_EN_ACTIVE
@@ -55,6 +56,7 @@ struct ChipInfo {
     String detectionString; // The string to match in the response
     GnssModel_t driver;     // The driver to use
 };
+
 /**
  * A gps class that only reads from the GPS periodically and keeps the gps powered down except when reading
  *
@@ -147,6 +149,7 @@ class GPS : private concurrency::OSThread
     virtual bool lookForLocation();
 
     GnssModel_t gnssModel = GNSS_MODEL_UNKNOWN;
+    int32_t gnssBaudRate = -1;
 
     TinyGPSPlus reader;
     uint8_t fixQual = 0; // fix quality from GPGGA
@@ -160,6 +163,21 @@ class GPS : private concurrency::OSThread
     TinyGPSCustom gsapdop;    // custom extract PDOP from GPGSA, GSA element #15
     TinyGPSCustom gsahdop;    // custom extract HDOP from GPGSA, GSA element #16
     TinyGPSCustom gsavdop;    // custom extract VDOP from GPGSA, GSA element #17
+    TinyGPSCustom pppnavWeek;
+    TinyGPSCustom pppnavSecsOFWeek;
+    TinyGPSCustom pppnavLeapSecs;
+    TinyGPSCustom pppnavSolStatus;  // custom extract 'Solution Status' from PPPNAVA, element # ???
+    TinyGPSCustom pppnavPosType;    // custom extract 'Position Status' from PPPNAVA, element # ???
+    TinyGPSCustom pppnavLat;
+    TinyGPSCustom pppnavLon;
+    TinyGPSCustom pppnavAlt;
+    TinyGPSCustom pppnavLatStdDev;
+    TinyGPSCustom pppnavLonStdDev;
+    TinyGPSCustom pppnavAltStdDev;
+    TinyGPSCustom pppnavSolAge;  // custom extract 'Solution Status' from PPPNAVA, element # ???
+    TinyGPSCustom pppnavSatellites;
+
+    // PppInfo pppInfo;
     uint8_t fixType = 0;      // fix type from GPGSA
 #endif
 
@@ -247,6 +265,8 @@ class GPS : private concurrency::OSThread
 
     // delay counter to allow more sats before fixed position stops GPS thread
     uint8_t fixeddelayCtr = 0;
+
+    static void logNmeaMessageToSd(const std::string &msg);
 };
 
 extern GPS *gps;

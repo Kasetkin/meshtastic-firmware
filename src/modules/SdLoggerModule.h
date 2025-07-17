@@ -16,6 +16,7 @@ class SdLoggerModule : public SinglePortModule, private concurrency::OSThread
     static void createSDDir(const char * path);
     static void appendSDFile(const char * path, const char * message);
     static void readSDFile(const char * path, std::vector<uint8_t> &fileData);
+    static std::string generateFilename();
 
   protected:
     virtual int32_t runOnce() override;
@@ -32,8 +33,8 @@ class SdLoggerModule : public SinglePortModule, private concurrency::OSThread
     std::string currentDate;
 
     void logCurrentState();
-    std::string generateFilename() const;
     std::string generateGpsLog() const;
+    std::string generatePppLog() const;
     std::string generateTelemetryLog() const;
     std::string generateDeviceInfoLog() const;
     std::string generateDevicePowerLog() const;

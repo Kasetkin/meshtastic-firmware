@@ -5,6 +5,8 @@
 #include "RTC.h"
 #include "main.h"
 #include "configuration.h"
+#include "unicore.h"
+#include "GeoCoord.h"
 
 #include <SD.h>
 #include <SPI.h>
@@ -72,19 +74,22 @@ void SdLoggerModule::logCurrentState()
     const std::string deviceLog = generateDeviceInfoLog();
     const std::string devicePower = generateDevicePowerLog();
     const std::string gpsLog = generateGpsLog();
+    const std::string pppLog = generatePppLog();
     const std::string envTelemetry = generateTelemetryLog();
 
-    const std::string fullLogMessage = deviceLog + devicePower + gpsLog + envTelemetry + std::string("\n");
+    //! \todo distance between GNSS and PPP positions
+
+    const std::string fullLogMessage = deviceLog + devicePower + gpsLog + pppLog + envTelemetry + std::string("\n");
     LOG_DEBUG("SdLoggerModule | message generation - end");
     LOG_DEBUG("SdLoggerModule | full message: \\");
     LOG_DEBUG("%s \\",  deviceLog.c_str());
     LOG_DEBUG("%s \\",  gpsLog.c_str());
+    LOG_DEBUG("%s \\", pppLog.c_str());
     LOG_DEBUG("%s \\",  envTelemetry.c_str());
     LOG_DEBUG("END-OF-LINE");
 
     const std::string fullpath = std::string(logsPath) + "/" + filename;
     appendSDFile(fullpath.c_str(), fullLogMessage.c_str());
-
 }
 
 std::string SdLoggerModule::generateTelemetryLog() const
@@ -168,7 +173,7 @@ std::string SdLoggerModule::generateDeviceInfoLog() const
     return message;
 }
 
-std::string SdLoggerModule::generateFilename() const
+std::string SdLoggerModule::generateFilename()
 {
     const bool requestLocalTime = false;
     uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, requestLocalTime);
@@ -266,7 +271,14 @@ std::string SdLoggerModule::generateGpsLog() const
         + std::string(";GNSSSEC;") + std::to_string(p.timestamp)
         + std::string(";LAT;") + std::to_string(lat)
         + std::string(";LON;") + std::to_string(lon)
+        /// over ellipsoid (WGS-84)
         + std::string(";ALT;") + std::to_string(p.altitude)
+        /// altitude over geoid, but which one???
+        + std::string(";ALTHAE;") + std::to_string(p.altitude_hae)
+        /// geoid undulation (separation), use 'Gravity' tool from 'geographiclib' library
+        /// $ /usr/local/bin/Gravity -n egm96 --input-string "27.988 86.925" -H
+        /// and result sould be ~ "-28.7422" in meters
+        + std::string(";UNDUL;") + std::to_string(p.altitude_geoidal_separation)
         + std::string(";SATS;") + std::to_string(p.sats_in_view)
         + std::string(";PDOP;") + dopToMeters(p.PDOP)
         + std::string(";HDOP;") + dopToMeters(p.HDOP)
@@ -274,6 +286,87 @@ std::string SdLoggerModule::generateGpsLog() const
         + std::string(";");
 
     LOG_DEBUG("SdLoggerModule | generate GPS info - end");
+    return message;
+}
+
+std::string SdLoggerModule::generatePppLog() const
+{
+    LOG_DEBUG("SdLoggerModule | generate PPP info - start");
+    const auto &p = localPPP;
+
+    const bool requestLocalTime = false;
+    uint32_t rtc_sec = getValidTime(RTCQuality::RTCQualityDevice, requestLocalTime);
+    const bool correctTime = (rtc_sec >= p.utxSeconds - MAX_GPS_TO_RTC_MAX_TIME_DELTA_SEC)
+        && (rtc_sec <= p.utxSeconds + MAX_GPS_TO_RTC_MAX_TIME_DELTA_SEC);
+
+    if (!correctTime) {
+        LOG_DEBUG("SdLoggerModule | generate PPP info - end | too old coordinates!!! ");
+        LOG_DEBUG("SdLoggerModule | rtc time %d, GPS time %d", rtc_sec, p.utxSeconds);
+        return "";
+    }
+
+    struct tm  gmTime{};
+    const time_t stampT = static_cast<time_t>(p.utxSeconds);
+    gmTime = *gmtime(&stampT);
+
+    constexpr int GMTIME_YEAR_FIX = 1900;
+    constexpr int GMTIME_MONTH_FIX = 1;
+    gmTime.tm_year += GMTIME_YEAR_FIX;
+    gmTime.tm_mon += GMTIME_MONTH_FIX;
+
+    const std::string yearStr = std::to_string(gmTime.tm_year);
+    const std::string monthStr = toStringWithZeros(gmTime.tm_mon, 2);
+    const std::string dayStr = toStringWithZeros(gmTime.tm_mday, 2);
+    const std::string dateString = yearStr + "-" + monthStr + "-" + dayStr;
+
+    const std::string hoursStr = toStringWithZeros(gmTime.tm_hour, 2);
+    const std::string minutesStr = toStringWithZeros(gmTime.tm_min, 2);
+    const std::string secondsStr = toStringWithZeros(gmTime.tm_sec, 2);
+    const std::string millisWithZeros = p.millisecs > 0
+        ? '.' + toStringWithZeros(p.millisecs, 3)
+        : std::string();
+
+    const std::string timeString = hoursStr + ":" + minutesStr + ":" + secondsStr + millisWithZeros;
+    const std::string dateTimeStringFull = dateString + 'T' + timeString + 'Z';
+
+    LOG_DEBUG("date from GPS: %d-%d-%dT%d:%d:%d.%dZ",
+        gmTime.tm_year, gmTime.tm_mon, gmTime.tm_mday,
+        gmTime.tm_hour, gmTime.tm_min, gmTime.tm_sec,
+        p.millisecs
+    );
+    LOG_DEBUG("date formatted by code: %s", dateTimeStringFull.c_str());
+
+    const double latPpp = static_cast<double>(p.lat) * 1e-7;
+    const double lonPpp = static_cast<double>(p.lon) * 1e-7;
+
+    const double latGnss = static_cast<double>(localPosition.latitude_i) * 1e-7;
+    const double lonGnss = static_cast<double>(localPosition.longitude_i) * 1e-7;
+
+    const double gnssToPppDistance = GeoCoord::latLongToMeter(latPpp, lonPpp, latGnss, lonGnss);
+
+    const std::string message =
+        std::string("PPP_SOLUTION_STATUS;") + solutionStatusStr(p.solutionStatus)
+        + std::string(";PPP_POSITION;") + positionTypeStr(p.positionType)
+        + std::string(";PPP_DT;") + dateTimeStringFull
+        + std::string(";PPP_GNSSSEC;") + std::to_string(p.utxSeconds)
+        + std::string(";PPP_LAT;") + std::to_string(latPpp)
+        + std::string(";PPP_LON;") + std::to_string(lonPpp)
+        + std::string(";PPP_GNSS_OFFSET;") + std::to_string(gnssToPppDistance)
+        /// over ellipsoid (WGS-84)
+        + std::string(";PPP_ALT;") + std::to_string(p.alt)
+        /// altitude over geoid, but which one???
+        // + std::string(";ALTHAE;") + std::to_string(p.altitude_hae)
+        /// geoid undulation (separation), use 'Gravity' tool from 'geographiclib' library
+        /// $ /usr/local/bin/Gravity -n egm96 --input-string "27.988 86.925" -H
+        /// and result sould be ~ "-28.7422" in meters
+        // + std::string(";UNDUL;") + std::to_string(p.altitude_geoidal_separation)
+        + std::string(";PPP_SATS;") + std::to_string(p.satellites)
+        + std::string(";PPP_LATSTDDEV;") + std::to_string(p.latStdDev)
+        + std::string(";PPP_LONSTDDEV;") + std::to_string(p.lonStdDev)
+        + std::string(";PPP_ALTSTDDEV;") + std::to_string(p.altStdDev)
+        + std::string(";");
+
+    LOG_DEBUG("SdLoggerModule | generate PPP info - end");
     return message;
 }
 
