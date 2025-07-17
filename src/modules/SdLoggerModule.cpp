@@ -300,8 +300,8 @@ std::string SdLoggerModule::generatePppLog() const
         && (rtc_sec <= p.utxSeconds + MAX_GPS_TO_RTC_MAX_TIME_DELTA_SEC);
 
     if (!correctTime) {
-        LOG_DEBUG("SdLoggerModule | generate PPP info - end | too old coordinates!!! ");
-        LOG_DEBUG("SdLoggerModule | rtc time %d, GPS time %d", rtc_sec, p.utxSeconds);
+        LOG_DEBUG("SdLoggerModule | generate PPP info - end | too old coordinates!!!");
+        LOG_DEBUG("SdLoggerModule | solution age %d, rtc time %d, GPS time %d", p.solutionAge, rtc_sec, p.utxSeconds);
         return "";
     }
 
