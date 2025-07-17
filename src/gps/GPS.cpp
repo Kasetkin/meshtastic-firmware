@@ -707,7 +707,8 @@ bool GPS::setup()
             _serial_gps->write("CONFIG RTK TIMEOUT 0\r\n");
             delay(defaultDelay);
             /// 'AUTO' or 'E6-HAS' or 'B2b-PPP' or 'SSR-RX' or 'L6MDCPPP' ?
-            _serial_gps->write("CONFIG PPP ENABLE E6-HAS\r\n");
+            // _serial_gps->write("CONFIG PPP ENABLE E6-HAS\r\n");
+            _serial_gps->write("CONFIG PPP ENABLE AUTO\r\n");
             delay(defaultDelay);
             _serial_gps->write("CONFIG DGPS TIMEOUT 0\r\n");
             delay(defaultDelay);
