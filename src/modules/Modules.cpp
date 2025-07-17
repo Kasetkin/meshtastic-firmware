@@ -225,7 +225,6 @@ void setupModules()
 #if HAS_SENSOR && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR
         environmentTelemetryModule = new EnvironmentTelemetryModule();
 #if __has_include("Adafruit_PM25AQI.h")
->>>>>>> origin/master
         if (nodeTelemetrySensorsMap[meshtastic_TelemetrySensorType_PMSA003I].first > 0) {
             airQualityTelemetryModule = new AirQualityTelemetryModule();
         }
