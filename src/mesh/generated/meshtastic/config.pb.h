@@ -102,7 +102,11 @@ typedef enum _meshtastic_Config_DeviceConfig_BuzzerMode {
     meshtastic_Config_DeviceConfig_BuzzerMode_NOTIFICATIONS_ONLY = 2,
     /* Non-notification system buzzer tones only.
  Buzzer is enabled only for non-notification tones such as button presses, startup, shutdown, but not for alerts. */
-    meshtastic_Config_DeviceConfig_BuzzerMode_SYSTEM_ONLY = 3
+    meshtastic_Config_DeviceConfig_BuzzerMode_SYSTEM_ONLY = 3,
+    /* Direct Message notifications only.
+ Buzzer is enabled only for direct messages and alerts, but not for button presses.
+ External notification config determines the specifics of the notification behavior. */
+    meshtastic_Config_DeviceConfig_BuzzerMode_DIRECT_MSG_ONLY = 4
 } meshtastic_Config_DeviceConfig_BuzzerMode;
 
 /* Bit field of boolean configuration options, indicating which optional
@@ -283,7 +287,13 @@ typedef enum _meshtastic_Config_LoRaConfig_RegionCode {
     /* Philippines 868mhz */
     meshtastic_Config_LoRaConfig_RegionCode_PH_868 = 20,
     /* Philippines 915mhz */
-    meshtastic_Config_LoRaConfig_RegionCode_PH_915 = 21
+    meshtastic_Config_LoRaConfig_RegionCode_PH_915 = 21,
+    /* Australia / New Zealand 433MHz */
+    meshtastic_Config_LoRaConfig_RegionCode_ANZ_433 = 22,
+    /* Kazakhstan 433MHz */
+    meshtastic_Config_LoRaConfig_RegionCode_KZ_433 = 23,
+    /* Kazakhstan 863MHz */
+    meshtastic_Config_LoRaConfig_RegionCode_KZ_863 = 24
 } meshtastic_Config_LoRaConfig_RegionCode;
 
 /* Standard predefined channel settings
@@ -639,8 +649,8 @@ extern "C" {
 #define _meshtastic_Config_DeviceConfig_RebroadcastMode_ARRAYSIZE ((meshtastic_Config_DeviceConfig_RebroadcastMode)(meshtastic_Config_DeviceConfig_RebroadcastMode_CORE_PORTNUMS_ONLY+1))
 
 #define _meshtastic_Config_DeviceConfig_BuzzerMode_MIN meshtastic_Config_DeviceConfig_BuzzerMode_ALL_ENABLED
-#define _meshtastic_Config_DeviceConfig_BuzzerMode_MAX meshtastic_Config_DeviceConfig_BuzzerMode_SYSTEM_ONLY
-#define _meshtastic_Config_DeviceConfig_BuzzerMode_ARRAYSIZE ((meshtastic_Config_DeviceConfig_BuzzerMode)(meshtastic_Config_DeviceConfig_BuzzerMode_SYSTEM_ONLY+1))
+#define _meshtastic_Config_DeviceConfig_BuzzerMode_MAX meshtastic_Config_DeviceConfig_BuzzerMode_DIRECT_MSG_ONLY
+#define _meshtastic_Config_DeviceConfig_BuzzerMode_ARRAYSIZE ((meshtastic_Config_DeviceConfig_BuzzerMode)(meshtastic_Config_DeviceConfig_BuzzerMode_DIRECT_MSG_ONLY+1))
 
 #define _meshtastic_Config_PositionConfig_PositionFlags_MIN meshtastic_Config_PositionConfig_PositionFlags_UNSET
 #define _meshtastic_Config_PositionConfig_PositionFlags_MAX meshtastic_Config_PositionConfig_PositionFlags_SPEED
@@ -679,8 +689,8 @@ extern "C" {
 #define _meshtastic_Config_DisplayConfig_CompassOrientation_ARRAYSIZE ((meshtastic_Config_DisplayConfig_CompassOrientation)(meshtastic_Config_DisplayConfig_CompassOrientation_DEGREES_270_INVERTED+1))
 
 #define _meshtastic_Config_LoRaConfig_RegionCode_MIN meshtastic_Config_LoRaConfig_RegionCode_UNSET
-#define _meshtastic_Config_LoRaConfig_RegionCode_MAX meshtastic_Config_LoRaConfig_RegionCode_PH_915
-#define _meshtastic_Config_LoRaConfig_RegionCode_ARRAYSIZE ((meshtastic_Config_LoRaConfig_RegionCode)(meshtastic_Config_LoRaConfig_RegionCode_PH_915+1))
+#define _meshtastic_Config_LoRaConfig_RegionCode_MAX meshtastic_Config_LoRaConfig_RegionCode_KZ_863
+#define _meshtastic_Config_LoRaConfig_RegionCode_ARRAYSIZE ((meshtastic_Config_LoRaConfig_RegionCode)(meshtastic_Config_LoRaConfig_RegionCode_KZ_863+1))
 
 #define _meshtastic_Config_LoRaConfig_ModemPreset_MIN meshtastic_Config_LoRaConfig_ModemPreset_LONG_FAST
 #define _meshtastic_Config_LoRaConfig_ModemPreset_MAX meshtastic_Config_LoRaConfig_ModemPreset_SHORT_TURBO

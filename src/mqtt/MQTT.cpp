@@ -355,7 +355,7 @@ void MQTT::onReceive(char *topic, byte *payload, size_t length)
         // if another "/" was added, parse string up to that character
         channelName = strtok(channelName, "/") ? strtok(channelName, "/") : channelName;
         // We allow downlink JSON packets only on a channel named "mqtt"
-        meshtastic_Channel &sendChannel = channels.getByName(channelName);
+        const meshtastic_Channel &sendChannel = channels.getByName(channelName);
         if (!(strncasecmp(channels.getGlobalId(sendChannel.index), Channels::mqttChannel, strlen(Channels::mqttChannel)) == 0 &&
               sendChannel.settings.downlink_enabled)) {
             LOG_WARN("JSON downlink received on channel not called 'mqtt' or without downlink enabled");
@@ -491,7 +491,7 @@ void MQTT::reconnect()
             return; // Don't try to connect directly to the server
         }
 #if HAS_NETWORKING
-        const PubSubConfig config(moduleConfig.mqtt);
+        const PubSubConfig ps_config(moduleConfig.mqtt);
         MQTTClient *clientConnection = mqttClient.get();
 #if MQTT_SUPPORTS_TLS
         if (moduleConfig.mqtt.tls_enabled) {
@@ -502,7 +502,7 @@ void MQTT::reconnect()
             LOG_INFO("Use non-TLS-encrypted session");
         }
 #endif
-        if (connectPubSub(config, pubSub, *clientConnection)) {
+        if (connectPubSub(ps_config, pubSub, *clientConnection)) {
             enabled = true; // Start running background process again
             runASAP = true;
             reconnectCount = 0;
@@ -559,10 +559,8 @@ void MQTT::sendSubscriptions()
 
 int32_t MQTT::runOnce()
 {
-#if HAS_NETWORKING
     if (!moduleConfig.mqtt.enabled || !(moduleConfig.mqtt.map_reporting_enabled || channels.anyMqttEnabled()))
         return disable();
-
     bool wantConnection = wantsLink();
 
     perhapsReportToMap();
@@ -572,7 +570,7 @@ int32_t MQTT::runOnce()
         publishQueuedMessages();
         return 200;
     }
-
+#if HAS_NETWORKING
     else if (!pubSub.loop()) {
         if (!wantConnection)
             return 5000; // If we don't want connection now, check again in 5 secs
@@ -596,8 +594,10 @@ int32_t MQTT::runOnce()
         powerFSM.trigger(EVENT_CONTACT_FROM_PHONE); // Suppress entering light sleep (because that would turn off bluetooth)
         return 20;
     }
-#endif
+#else
+    // No networking available, return default interval
     return 30000;
+#endif
 }
 
 bool MQTT::isValidConfig(const meshtastic_ModuleConfig_MQTTConfig &config, MQTTClient *client)
@@ -763,7 +763,10 @@ void MQTT::onSend(const meshtastic_MeshPacket &mp_encrypted, const meshtastic_Me
         }
         entry->topic = std::move(topic);
         entry->envBytes.assign(bytes, numBytes);
-        assert(mqttQueue.enqueue(entry, 0));
+        if (mqttQueue.enqueue(entry, 0) == false) {
+            LOG_CRIT("Failed to add a message to mqttQueue!");
+            abort();
+        }
     }
 }
 
