@@ -348,7 +348,8 @@ std::string SdLoggerModule::generatePppLog() const
         std::string("PPP_SOLUTION_STATUS;") + solutionStatusStr(p.solutionStatus)
         + std::string(";PPP_POSITION;") + positionTypeStr(p.positionType)
         + std::string(";PPP_DT;") + dateTimeStringFull
-        + std::string(";PPP_GNSSSEC;") + std::to_string(p.utxSeconds)
+        + std::string(";PPP_TIME;") + std::to_string(p.utxSeconds)
+        + std::string(";PPP_AGE;") + std::to_string(p.solutionAge)
         + std::string(";PPP_LAT;") + std::to_string(latPpp)
         + std::string(";PPP_LON;") + std::to_string(lonPpp)
         + std::string(";PPP_GNSS_OFFSET;") + std::to_string(gnssToPppDistance)
