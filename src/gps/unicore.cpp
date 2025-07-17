@@ -7,14 +7,14 @@ PppInfo localPPP = PppInfo();
 
 int32_t parseDegreesLatLon(const char *str)
 {
-    LOG_DEBUG("parse decimal degree from sring [%s]", str);
+    // LOG_DEBUG("parse decimal degree from sring [%s]", str);
 
     // An invalid character
     if (!isdigit(*str))
         return PPP_BAD_LATLON;
 
     const int32_t roundDigits = static_cast<int32_t>(atol(str));
-    LOG_DEBUG("left part of str is %d", roundDigits);
+    // LOG_DEBUG("left part of str is %d", roundDigits);
     if ((roundDigits < -181) || (roundDigits > 181))
         return PPP_BAD_LATLON;
 
@@ -33,7 +33,7 @@ int32_t parseDegreesLatLon(const char *str)
     int32_t accumulator = 0;
     do
     {
-        LOG_DEBUG("digit is [%c], multiplier is [%d], accum is [%d]", *str, currectDigitMultiplier, accumulator);
+        // LOG_DEBUG("digit is [%c], multiplier is [%d], accum is [%d]", *str, currectDigitMultiplier, accumulator);
         accumulator += (*str - '0') * currectDigitMultiplier;
         currectDigitMultiplier /= 10;
     } while (isdigit(*++str) && (currectDigitMultiplier > 0));
@@ -45,7 +45,7 @@ int32_t parseDegreesLatLon(const char *str)
     // LOG_DEBUG("result value is %d", result);
 
     const int32_t result = roundDigits * meshtasticLatLonMultiplier + accumulator;
-    LOG_DEBUG("result is [%d]", result);
+    // LOG_DEBUG("result is [%d]", result);
     return result;
 }
 
@@ -61,8 +61,8 @@ std::string prepareString(const char *str)
                    [](unsigned char c){ return std::toupper(c); } // correct
     );
 
-    LOG_DEBUG("original string: %s", str);
-    LOG_DEBUG("prepared string: %s", cppStr.c_str());
+    // LOG_DEBUG("original string: %s", str);
+    // LOG_DEBUG("prepared string: %s", cppStr.c_str());
     return cppStr;
 }
 
