@@ -1240,7 +1240,7 @@ int32_t GPS::runOnce()
         }
         GPSInitFinished = true;
 
-        PMU->setPowerChannelVoltage(XPOWERS_DCDC5, 3400);
+        // PMU->setPowerChannelVoltage(XPOWERS_DCDC5, 3400);
         PMU->enablePowerOutput(XPOWERS_DCDC5);
 
         publishUpdate();
