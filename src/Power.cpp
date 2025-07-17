@@ -1003,11 +1003,16 @@ bool Power::axpChipInit()
              */
             // PMU->setPowerChannelVoltage(XPOWERS_ALDO4, 3300);
             // PMU->enablePowerOutput(XPOWERS_ALDO4);
-            delay(1000);
-            LOG_DEBUG("setup DCDC5 to 3.4V");
-            PMU->setPowerChannelVoltage(XPOWERS_DCDC5, 3400);
+
+            /// from UM980 User Manual, 2.2.2 Operating Conditions:
+            ///                             min     typ     max
+            /// Power Supply Voltage (VCC) 3.0V .. 3.3V .. 3.6V
+            /// Use step-up (boost) module based on TPS61023 chip
+            /// to power GNSS active antenna
+            /// And use minimal voltage to power UM980 + 0.1V for losses in cables
+            LOG_DEBUG("setup DCDC5 to 3.1V");
+            PMU->setPowerChannelVoltage(XPOWERS_DCDC5, 3100);
             PMU->enablePowerOutput(XPOWERS_DCDC5);
-            delay(1000);
 
 
             // lora radio power channel
@@ -1046,7 +1051,8 @@ bool Power::axpChipInit()
 
             // not use channel
             PMU->disablePowerOutput(XPOWERS_DCDC2); // not elicited
-            // PMU->disablePowerOutput(XPOWERS_DCDC5); // not elicited
+            PMU->disablePowerOutput(XPOWERS_ALDO4);     /// disable default U-Blox chip
+            // PMU->disablePowerOutput(XPOWERS_DCDC5);  /// Use for UM980 board, DC-DC should be more efficient than LDO
             PMU->disablePowerOutput(XPOWERS_DLDO1); // Invalid power channel, it does not exist
             PMU->disablePowerOutput(XPOWERS_DLDO2); // Invalid power channel, it does not exist
             PMU->disablePowerOutput(XPOWERS_VBACKUP);
