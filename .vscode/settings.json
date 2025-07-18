@@ -68,6 +68,8 @@
     "ratio": "cpp",
     "set": "cpp",
     "variant": "cpp",
-    "thread": "cpp"
+    "thread": "cpp",
+    "condition_variable": "cpp",
+    "mutex": "cpp"
   }
 }
