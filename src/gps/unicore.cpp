@@ -1,6 +1,7 @@
 #include "unicore.h"
 #include <cctype>
 #include <cmath>
+#include <string>
 #include "configuration.h"
 
 PppInfo localPPP = PppInfo();
@@ -143,6 +144,18 @@ PppDatumId parseDatumId(const char *str)
         return PppDatumId::NO_VALUE;
 
     return PppDatumId::NO_VALUE;
+}
+
+int32_t parseStationId(const char *str)
+{
+    /// for some unclear reason it is not 'just' 9901 but "9901",
+    /// so we need to remove quotes
+    std::string cppStr = prepareString(str);
+    if ((cppStr[0] == '"') && (cppStr[cppStr.size() - 1] == '"'))
+        cppStr = cppStr.substr(1, cppStr.size() - 2);
+
+    const int32_t result = static_cast<int32_t>(std::stol(cppStr));
+    return result;
 }
 
 PppService parsePppService(const int32_t stationId)

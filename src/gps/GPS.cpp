@@ -1849,7 +1849,7 @@ bool GPS::lookForLocation()
     localPPP.solutionStatus = parseSolutionStatus(pppnavSolStatus.value());
     localPPP.positionType = parsePositionType(pppnavPosType.value());
     localPPP.datumId = parseDatumId(pppnavDatumId.value());
-    localPPP.stationId = static_cast<int32_t>(atol(pppnavStationId.value()));
+    localPPP.stationId = parseStationId(pppnavStationId.value());
     localPPP.serviceId = parsePppService(localPPP.stationId);
 
     uint32_t week = static_cast<int32_t>(atol(pppnavWeek.value()));

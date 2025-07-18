@@ -77,6 +77,7 @@ int32_t parseDegreesLatLon(const char *str);
 PppSolutionStatus parseSolutionStatus(const char *str);
 PositionVelocityType parsePositionType(const char *str);
 PppDatumId parseDatumId(const char *str);
+int32_t parseStationId(const char *str);
 PppService parsePppService(const int32_t stationId);
 
 const std::uint32_t aulCrcTable[256] =
