@@ -579,7 +579,7 @@ void Screen::setup()
             touchScreenImpl1->init();
         }
     }
-#elif HAS_TOUCHSCREEN
+#elif HAS_TOUCHSCREEN && !defined(USE_EINK)
     touchScreenImpl1 =
         new TouchScreenImpl1(dispdev->getWidth(), dispdev->getHeight(), static_cast<TFTDisplay *>(dispdev)->getTouch);
     touchScreenImpl1->init();
@@ -1264,40 +1264,39 @@ int Screen::handleTextMessage(const meshtastic_MeshPacket *packet)
             if (shouldWakeOnReceivedMessage()) {
                 setOn(true);    // Wake up the screen first
                 forceDisplay(); // Forces screen redraw
-
-                // === Prepare banner content ===
-                const meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(packet->from);
-                const char *longName = (node && node->has_user) ? node->user.long_name : nullptr;
-
-                const char *msgRaw = reinterpret_cast<const char *>(packet->decoded.payload.bytes);
-
-                char banner[256];
-
-                // Check for bell character in message to determine alert type
-                bool isAlert = false;
-                for (size_t i = 0; i < packet->decoded.payload.size && i < 100; i++) {
-                    if (msgRaw[i] == '\x07') {
-                        isAlert = true;
-                        break;
-                    }
-                }
-
-                if (isAlert) {
-                    if (longName && longName[0]) {
-                        snprintf(banner, sizeof(banner), "Alert Received from\n%s", longName);
-                    } else {
-                        strcpy(banner, "Alert Received");
-                    }
-                } else {
-                    if (longName && longName[0]) {
-                        snprintf(banner, sizeof(banner), "New Message from\n%s", longName);
-                    } else {
-                        strcpy(banner, "New Message");
-                    }
-                }
-
-                screen->showSimpleBanner(banner, 3000);
             }
+            // === Prepare banner content ===
+            const meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(packet->from);
+            const char *longName = (node && node->has_user) ? node->user.long_name : nullptr;
+
+            const char *msgRaw = reinterpret_cast<const char *>(packet->decoded.payload.bytes);
+
+            char banner[256];
+
+            // Check for bell character in message to determine alert type
+            bool isAlert = false;
+            for (size_t i = 0; i < packet->decoded.payload.size && i < 100; i++) {
+                if (msgRaw[i] == '\x07') {
+                    isAlert = true;
+                    break;
+                }
+            }
+
+            if (isAlert) {
+                if (longName && longName[0]) {
+                    snprintf(banner, sizeof(banner), "Alert Received from\n%s", longName);
+                } else {
+                    strcpy(banner, "Alert Received");
+                }
+            } else {
+                if (longName && longName[0]) {
+                    snprintf(banner, sizeof(banner), "New Message from\n%s", longName);
+                } else {
+                    strcpy(banner, "New Message");
+                }
+            }
+
+            screen->showSimpleBanner(banner, 3000);
         }
     }
 
