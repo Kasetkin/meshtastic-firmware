@@ -586,7 +586,8 @@ void RadioInterface::applyModemConfig()
 
     // Check if we use the default frequency slot
     RadioInterface::uses_default_frequency_slot =
-        channel_num == hash(DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, false)) % numChannels;
+        channel_num ==
+        hash(DisplayFormatters::getModemPresetDisplayName(config.lora.modem_preset, false, config.lora.use_preset)) % numChannels;
 
     // Old frequency selection formula
     // float freq = myRegion->freqStart + ((((myRegion->freqEnd - myRegion->freqStart) / numChannels) / 2) * channel_num);
@@ -666,8 +667,10 @@ void RadioInterface::limitPower(int8_t loraMaxPower)
 
 void RadioInterface::deliverToReceiver(meshtastic_MeshPacket *p)
 {
-    if (router)
+    if (router) {
+        p->transport_mechanism = meshtastic_MeshPacket_TransportMechanism_TRANSPORT_LORA;
         router->enqueueReceivedMessage(p);
+    }
 }
 
 /***
