@@ -146,6 +146,7 @@ extern void drawCommonHeader(OLEDDisplay *display, int16_t x, int16_t y, const c
 
 #include <forward_list>
 
+EnvironmentTelemetryModule *environmentTelemetryModule;
 static std::forward_list<TelemetrySensor *> sensors;
 
 template <typename T> void addSensor(ScanI2C *i2cScanner, ScanI2C::DeviceType type)
