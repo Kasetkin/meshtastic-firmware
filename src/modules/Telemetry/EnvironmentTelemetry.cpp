@@ -147,6 +147,7 @@ extern void drawCommonHeader(OLEDDisplay *display, int16_t x, int16_t y, const c
 #include <Throttle.h>
 
 static constexpr uint16_t TX_HISTORY_KEY_ENVIRONMENT_TELEMETRY = 0x8002;
+EnvironmentTelemetryModule *environmentTelemetryModule;
 
 void EnvironmentTelemetryModule::i2cScanFinished(ScanI2C *i2cScanner)
 {
