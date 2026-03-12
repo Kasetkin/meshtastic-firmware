@@ -6,6 +6,8 @@
 #include "main.h"
 #include "configuration.h"
 
+#if defined(HAS_SDCARD)
+
 #include <SD.h>
 #include <SPI.h>
 
@@ -408,3 +410,5 @@ void SdLoggerModule::readSDFile(const char * path, std::vector<uint8_t> &fileDat
     fileData.shrink_to_fit();
     file.close();
 }
+
+#endif // defined(HAS_SDCARD)
